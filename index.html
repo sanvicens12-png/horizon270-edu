@@ -3,14 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Horizon270.edu — Plataforma educativa amb IA.">
+
+  <meta
+    name="description"
+    content="Horizon270.edu — Plataforma educativa amb IA."
+  >
+
   <title>Horizon270.edu</title>
+
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+
+  <!-- =====================================================
+       NAVBAR
+  ====================================================== -->
+
   <header class="navbar">
-    <a href="#" class="logo">Horizon<span>270</span><small>.edu</small></a>
+
+    <a href="#" class="logo">
+      Horizon<span>270</span><small>.edu</small>
+    </a>
 
     <nav>
       <a href="#funcions">Funcions</a>
@@ -19,15 +33,41 @@
     </nav>
 
     <div class="nav-actions">
-      <button class="btn secondary" onclick="showLogin()">Iniciar sessió</button>
-      <button class="btn primary" onclick="showSignup()">Crear compte</button>
+
+      <button
+        class="btn secondary"
+        onclick="showLogin()"
+      >
+        Iniciar sessió
+      </button>
+
+      <button
+        class="btn primary"
+        onclick="showSignup()"
+      >
+        Crear compte
+      </button>
+
     </div>
+
   </header>
 
+
+  <!-- =====================================================
+       MAIN
+  ====================================================== -->
+
   <main>
+
+    <!-- HERO -->
+
     <section class="hero">
+
       <div class="hero-content">
-        <div class="badge">✦ Educació + Intel·ligència Artificial</div>
+
+        <div class="badge">
+          ✦ Educació + Intel·ligència Artificial
+        </div>
 
         <h1>
           L'educació,<br>
@@ -40,28 +80,47 @@
         </p>
 
         <div class="hero-buttons">
-          <button class="btn primary large" onclick="showSignup()">
+
+          <button
+            class="btn primary large"
+            onclick="showSignup()"
+          >
             Començar ara →
           </button>
-          <button class="btn secondary large" onclick="scrollToSection('ia')">
+
+          <button
+            class="btn secondary large"
+            onclick="scrollToSection('ia')"
+          >
             Descobrir la IA
           </button>
+
         </div>
+
       </div>
 
+
       <div class="hero-card">
+
         <div class="card-header">
+
           <span>🤖</span>
+
           <div>
             <strong>IA d'aprenentatge</strong>
             <small>Analitzant el teu progrés</small>
           </div>
+
           <span class="status"></span>
+
         </div>
 
         <div class="progress-info">
+
           <span>Comprensió de la unitat</span>
+
           <strong>78%</strong>
+
         </div>
 
         <div class="progress-bar">
@@ -69,82 +128,143 @@
         </div>
 
         <div class="ai-message">
+
           <span>💡</span>
+
           <p>
             He detectat que necessites reforçar un concepte anterior
             abans de continuar.
           </p>
+
         </div>
+
       </div>
+
     </section>
 
+
+    <!-- FUNCIONS -->
+
     <section id="funcions" class="section">
+
       <div class="section-title">
-        <span class="eyebrow">UNA PLATAFORMA</span>
-        <h2>Tot el centre,<br><span>en un sol lloc.</span></h2>
+
+        <span class="eyebrow">
+          UNA PLATAFORMA
+        </span>
+
+        <h2>
+          Tot el centre,<br>
+          <span>en un sol lloc.</span>
+        </h2>
+
       </div>
 
+
       <div class="feature-grid">
+
         <article class="feature">
+
           <div class="icon">🏫</div>
+
           <h3>Centres</h3>
+
           <p>
             Gestiona alumnes, professors, professionals, famílies,
             horaris, calendari i comunicacions.
           </p>
+
         </article>
 
+
         <article class="feature">
+
           <div class="icon">👨‍🏫</div>
+
           <h3>Professors</h3>
+
           <p>
             Classes, materials, activitats, exàmens, notes,
             assistència, tutories i molt més.
           </p>
+
         </article>
 
+
         <article class="feature">
+
           <div class="icon">👨‍🎓</div>
+
           <h3>Alumnes</h3>
+
           <p>
             Aprèn, practica, consulta el teu progrés i treballa
             amb una IA que t'ajuda sense fer-te els exercicis.
           </p>
+
         </article>
 
+
         <article class="feature">
+
           <div class="icon">👨‍👩‍👧</div>
+
           <h3>Famílies</h3>
+
           <p>
             Consulta assistència, notes, autoritzacions,
             documents, reunions i comunicacions.
           </p>
+
         </article>
 
+
         <article class="feature">
+
           <div class="icon">🧠</div>
+
           <h3>Aprenentatge personalitzat</h3>
+
           <p>
             La plataforma identifica conceptes que encara no domines
             i adapta el reforç.
           </p>
+
         </article>
 
+
         <article class="feature">
+
           <div class="icon">📅</div>
+
           <h3>Horaris i calendari</h3>
+
           <p>
             Classes, exàmens, guàrdies, reunions, activitats
             i disponibilitat connectats.
           </p>
+
         </article>
+
       </div>
+
     </section>
 
+
+    <!-- IA -->
+
     <section id="ia" class="ai-section">
+
       <div>
-        <span class="eyebrow">LA DIFERÈNCIA</span>
-        <h2>Una IA que t'ajuda a <span>aprendre.</span></h2>
+
+        <span class="eyebrow">
+          LA DIFERÈNCIA
+        </span>
+
+        <h2>
+          Una IA que t'ajuda a
+          <span>aprendre.</span>
+        </h2>
 
         <p>
           Horizon270.edu no està pensat perquè l'alumne copiï una resposta.
@@ -152,65 +272,152 @@
           explicacions i reforç.
         </p>
 
+
         <div class="principles">
-          <div>✓ No fa els exercicis per tu</div>
-          <div>✓ Detecta què encara no domines</div>
-          <div>✓ S'adapta als materials del professor</div>
-          <div>✓ Construeix el teu mapa d'aprenentatge</div>
+
+          <div>
+            ✓ No fa els exercicis per tu
+          </div>
+
+          <div>
+            ✓ Detecta què encara no domines
+          </div>
+
+          <div>
+            ✓ S'adapta als materials del professor
+          </div>
+
+          <div>
+            ✓ Construeix el teu mapa d'aprenentatge
+          </div>
+
         </div>
+
       </div>
 
+
       <div class="ai-panel">
+
         <div class="ai-panel-top">
+
           <span>🤖</span>
+
           <strong>Horizon AI</strong>
-          <span class="online">● En línia</span>
+
+          <span class="online">
+            ● En línia
+          </span>
+
         </div>
 
+
         <div class="chat">
+
           <div class="message user">
             No entenc aquest problema.
           </div>
 
           <div class="message ai">
+
             Entesos. No et donaré la resposta directament.
             Primer mirem quin pas és el que et costa.
+
             <br><br>
-            <strong>Quina operació creus que hauríem de fer primer?</strong>
+
+            <strong>
+              Quina operació creus que hauríem de fer primer?
+            </strong>
+
           </div>
+
         </div>
+
       </div>
+
     </section>
+
+
+    <!-- CTA -->
 
     <section id="comunitat" class="cta-section">
-      <span class="eyebrow">HORIZON270.EDU</span>
-      <h2>Preparats per al<br><span>següent horitzó?</span></h2>
+
+      <span class="eyebrow">
+        HORIZON270.EDU
+      </span>
+
+      <h2>
+        Preparats per al<br>
+        <span>següent horitzó?</span>
+      </h2>
+
       <p>
-        Centres, professors, alumnes i famílies. Una plataforma.
-        Una nova manera d'aprendre.
+        Centres, professors, alumnes i famílies.
+        Una plataforma. Una nova manera d'aprendre.
       </p>
 
-      <button class="btn primary large" onclick="showSignup()">
+      <button
+        class="btn primary large"
+        onclick="showSignup()"
+      >
         Crear un compte →
       </button>
+
     </section>
+
   </main>
 
+
+  <!-- =====================================================
+       FOOTER
+  ====================================================== -->
+
   <footer>
-    <div class="logo">Horizon<span>270</span><small>.edu</small></div>
-    <p>© 2026 Horizon270.edu · Tots els drets reservats.</p>
+
+    <div class="logo">
+      Horizon<span>270</span><small>.edu</small>
+    </div>
+
+    <p>
+      © 2026 Horizon270.edu · Tots els drets reservats.
+    </p>
+
   </footer>
 
-  <!-- Modal -->
-  <div id="modal" class="modal hidden">
+
+  <!-- =====================================================
+       AUTH MODAL
+  ====================================================== -->
+
+  <div
+    id="modal"
+    class="modal hidden"
+  >
+
     <div class="modal-box">
-      <button class="close" onclick="closeModal()">×</button>
+
+      <button
+        class="close"
+        onclick="closeModal()"
+        aria-label="Tancar"
+      >
+        ×
+      </button>
+
 
       <div id="modalContent"></div>
+
     </div>
+
   </div>
 
+
+  <!-- =====================================================
+       SUPABASE
+  ====================================================== -->
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js"></script>
+
+  <script src="script.js"></script>
+
 </body>
 </html>
