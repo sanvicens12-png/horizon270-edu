@@ -1,3 +1,10 @@
+const SUPABASE_URL = "https://cecouhunurwkncfcjjor.supabase.co/rest/v1/";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_mU_871SdiMJgSA1LHCLEAg_my7qG2oq";
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+);
 const modal = document.getElementById("modal");
 const modalContent = document.getElementById("modalContent");
 
