@@ -1,3 +1,12 @@
+// =========================================================
+// HORIZON270.EDU
+// Supabase connection + Authentication
+// =========================================================
+
+// ---------------------------------------------------------
+// 1. SUPABASE CONNECTION
+// ---------------------------------------------------------
+
 const SUPABASE_URL = "https://cecouhunurwkncfcjjor.supabase.co/rest/v1/";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_mU_871SdiMJgSA1LHCLEAg_my7qG2oq";
 
@@ -5,67 +14,191 @@ const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
 );
-const modal = document.getElementById("modal");
-const modalContent = document.getElementById("modalContent");
 
-function showSignup() {
-  modalContent.innerHTML = `
-    <span class="eyebrow">CREAR COMPTE</span>
-    <h2 style="margin-top:10px;">Com utilitzaràs Horizon270.edu?</h2>
-    <p style="color:#9aa5b5;margin-top:10px;">
-      Selecciona el tipus de compte que correspon a la teva situació.
-    </p>
 
-    <div class="role-grid">
-      <button class="role">🏫<br><strong>Centre educatiu</strong></button>
-      <button class="role">👨‍🏫<br><strong>Professor</strong></button>
-      <button class="role">👨‍💼<br><strong>Professional</strong></button>
-      <button class="role">👨‍🎓<br><strong>Alumne</strong></button>
-      <button class="role">👤<br><strong>Estudiant independent</strong></button>
-      <button class="role">👨‍👩‍👧<br><strong>Família</strong></button>
-    </div>
-  `;
+// ---------------------------------------------------------
+// 2. REGISTER
+// ---------------------------------------------------------
 
-  modal.classList.remove("hidden");
+async function registerUser(email, password, displayName) {
+    const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+
+        options: {
+            data: {
+                display_name: displayName
+            }
+        }
+    });
+
+    if (error) {
+        console.error("Error de registre:", error.message);
+
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+
+    return {
+        success: true,
+        data: data
+    };
 }
 
-function showLogin() {
-  modalContent.innerHTML = `
-    <span class="eyebrow">ACCÉS</span>
-    <h2 style="margin-top:10px;">Iniciar sessió</h2>
 
-    <div style="display:grid;gap:14px;margin-top:25px;">
-      <input
-        type="email"
-        placeholder="Correu electrònic"
-        style="padding:14px;border-radius:10px;border:1px solid #252d3a;background:#151b25;color:white;"
-      >
+// ---------------------------------------------------------
+// 3. LOGIN
+// ---------------------------------------------------------
 
-      <input
-        type="password"
-        placeholder="Contrasenya"
-        style="padding:14px;border-radius:10px;border:1px solid #252d3a;background:#151b25;color:white;"
-      >
+async function loginUser(email, password) {
+    const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
 
-      <button class="btn primary">Entrar</button>
-    </div>
-  `;
+    if (error) {
+        console.error(
+            "Error d'inici de sessió:",
+            error.message
+        );
 
-  modal.classList.remove("hidden");
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+
+    return {
+        success: true,
+        data: data
+    };
 }
 
-function closeModal() {
-  modal.classList.add("hidden");
+
+// ---------------------------------------------------------
+// 4. LOGOUT
+// ---------------------------------------------------------
+
+async function logoutUser() {
+    const { error } =
+        await supabaseClient.auth.signOut();
+
+    if (error) {
+        console.error(
+            "Error tancant sessió:",
+            error.message
+        );
+
+        return false;
+    }
+
+    return true;
 }
 
-function scrollToSection(id) {
-  document.getElementById(id)?.scrollIntoView({
-    behavior: "smooth"
-  });
+
+// ---------------------------------------------------------
+// 5. CURRENT USER
+// ---------------------------------------------------------
+
+async function getCurrentUser() {
+    const {
+        data: { user },
+        error
+    } = await supabaseClient.auth.getUser();
+
+    if (error) {
+        console.error(
+            "Error obtenint l'usuari:",
+            error.message
+        );
+
+        return null;
+    }
+
+    return user;
 }
 
-modal.addEventListener("click", (event) => {
-  if (event.target === modal) {
-    closeModal();
-  }
-});
+
+// ---------------------------------------------------------
+// 6. AUTH STATE
+// ---------------------------------------------------------
+
+supabaseClient.auth.onAuthStateChange(
+    (event, session) => {
+
+        console.log(
+            "Esdeveniment d'autenticació:",
+            event
+        );
+
+        if (session) {
+
+            console.log(
+                "Usuari connectat:",
+                session.user.email
+            );
+
+        } else {
+
+            console.log(
+                "Cap usuari connectat"
+            );
+        }
+    }
+);
+
+
+// ---------------------------------------------------------
+// 7. TEST CONNECTION
+// ---------------------------------------------------------
+
+async function testSupabaseConnection() {
+
+    const {
+        data: { user },
+        error
+    } = await supabaseClient.auth.getUser();
+
+    if (error) {
+
+        console.log(
+            "Supabase connectat. No hi ha cap sessió activa."
+        );
+
+        return;
+    }
+
+    if (user) {
+
+        console.log(
+            "Supabase connectat. Usuari:",
+            user.email
+        );
+
+    } else {
+
+        console.log(
+            "Supabase connectat correctament."
+        );
+    }
+}
+
+
+// ---------------------------------------------------------
+// 8. START
+// ---------------------------------------------------------
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        console.log(
+            "Horizon270.edu iniciat."
+        );
+
+        testSupabaseConnection();
+    }
+);
