@@ -706,3 +706,102 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+/* =========================
+   AUTH FORM — HORIZON270.EDU
+   ========================= */
+
+.modal-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.modal-box form > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-box label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd3df;
+}
+
+.modal-box input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: #080b11;
+  color: #f4f7fb;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.modal-box input::placeholder {
+  color: #687385;
+}
+
+.modal-box input:focus {
+  border-color: #6c8cff;
+  background: #0b0f17;
+  box-shadow: 0 0 0 3px rgba(108, 140, 255, 0.12);
+}
+
+.modal-box form button[type="submit"] {
+  width: 100%;
+  margin-top: 4px;
+  padding: 13px 18px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6c8cff, #806cff);
+  color: white;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.modal-box form button[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(108, 140, 255, 0.25);
+}
+
+.modal-box form button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+.auth-switch {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #8f99aa;
+}
+
+.auth-switch button {
+  border: none;
+  background: transparent;
+  color: #7f9cff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-switch button:hover {
+  color: #a4b7ff;
+}
