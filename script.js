@@ -1,24 +1,35 @@
 // =========================================================
 // HORIZON270.EDU
 // Supabase + Authentication + Profiles + Dashboard
+// + Edició de perfil + Foto de perfil
 // =========================================================
 
-const SUPABASE_URL = "https://cecouhunurwkncfcjjor.supabase.co";
+
+// =========================================================
+// 1. SUPABASE
+// =========================================================
+
+const SUPABASE_URL =
+    "https://cecouhunurwkncfcjjor.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_mU_871SdiMJgSA1LHCLEAg_my7qG2oq";
 
-const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
-);
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+const AVATAR_BUCKET = "avatars";
 
 
 // =========================================================
-// UTILITATS
+// 2. UTILITATS
 // =========================================================
 
 function escapeHTML(value) {
+
     return String(value ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -42,11 +53,24 @@ function showMessage(message, type = "") {
 }
 
 
+function getInitial(name) {
+
+    return String(name || "U")
+        .trim()
+        .charAt(0)
+        .toUpperCase();
+}
+
+
 // =========================================================
-// AUTH — REGISTRE
+// 3. AUTH — REGISTRE
 // =========================================================
 
-async function registerUser(email, password, displayName) {
+async function registerUser(
+    email,
+    password,
+    displayName
+) {
 
     const { data, error } =
         await supabaseClient.auth.signUp({
@@ -85,10 +109,13 @@ async function registerUser(email, password, displayName) {
 
 
 // =========================================================
-// AUTH — LOGIN
+// 4. AUTH — LOGIN
 // =========================================================
 
-async function loginUser(email, password) {
+async function loginUser(
+    email,
+    password
+) {
 
     const { data, error } =
         await supabaseClient.auth.signInWithPassword({
@@ -121,7 +148,7 @@ async function loginUser(email, password) {
 
 
 // =========================================================
-// AUTH — LOGOUT
+// 5. AUTH — LOGOUT
 // =========================================================
 
 async function logoutUser() {
@@ -146,7 +173,7 @@ async function logoutUser() {
 
 
 // =========================================================
-// USUARI ACTUAL
+// 6. USUARI ACTUAL
 // =========================================================
 
 async function getCurrentUser() {
@@ -173,7 +200,7 @@ async function getCurrentUser() {
 
 
 // =========================================================
-// CREAR PERFIL
+// 7. PERFIL — CREAR
 // =========================================================
 
 async function createProfile(
@@ -222,7 +249,7 @@ async function createProfile(
 
 
 // =========================================================
-// OBTENIR PERFIL
+// 8. PERFIL — OBTENIR
 // =========================================================
 
 async function getProfile(userId) {
@@ -251,18 +278,19 @@ async function getProfile(userId) {
 
 
 // =========================================================
-// ACTUALITZAR PERFIL
+// 9. PERFIL — ACTUALITZAR NOM
 // =========================================================
 
-async function updateProfile(userId, displayName) {
+async function updateProfileName(
+    userId,
+    displayName
+) {
 
     const { data, error } =
         await supabaseClient
             .from("profiles")
             .update({
-
                 display_name: displayName
-
             })
             .eq("id", userId)
             .select()
@@ -283,16 +311,6 @@ async function updateProfile(userId, displayName) {
     }
 
 
-    // També actualitzem el metadata de Supabase Auth
-    await supabaseClient.auth.updateUser({
-
-        data: {
-            display_name: displayName
-        }
-
-    });
-
-
     return {
         success: true,
         data
@@ -301,7 +319,195 @@ async function updateProfile(userId, displayName) {
 
 
 // =========================================================
-// LOGIN MODAL
+// 10. FOTO — RUTA
+// =========================================================
+
+function getAvatarPath(userId) {
+
+    return `${userId}/avatar`;
+}
+
+
+// =========================================================
+// 11. FOTO — OBTENIR URL SIGNADA
+// =========================================================
+
+async function getAvatarUrl(userId) {
+
+    if (!userId) return null;
+
+
+    const path =
+        getAvatarPath(userId);
+
+
+    const { data, error } =
+        await supabaseClient.storage
+            .from(AVATAR_BUCKET)
+            .createSignedUrl(
+                path,
+                60 * 60 * 24 * 365
+            );
+
+
+    if (error) {
+
+        return null;
+    }
+
+
+    return data?.signedUrl || null;
+}
+
+
+// =========================================================
+// 12. FOTO — PUJAR
+// =========================================================
+
+async function uploadAvatar(
+    userId,
+    file
+) {
+
+    if (!userId) {
+
+        return {
+            success: false,
+            error: "No hi ha cap usuari connectat."
+        };
+    }
+
+
+    if (!file) {
+
+        return {
+            success: false,
+            error: "No s'ha seleccionat cap imatge."
+        };
+    }
+
+
+    // ---------------------------------------------
+    // Comprovar tipus
+    // ---------------------------------------------
+
+    if (!file.type.startsWith("image/")) {
+
+        return {
+            success: false,
+            error: "El fitxer seleccionat no és una imatge."
+        };
+    }
+
+
+    // ---------------------------------------------
+    // Mida màxima: 5 MB
+    // ---------------------------------------------
+
+    const maxSize =
+        5 * 1024 * 1024;
+
+
+    if (file.size > maxSize) {
+
+        return {
+            success: false,
+            error: "La imatge no pot superar els 5 MB."
+        };
+    }
+
+
+    const path =
+        getAvatarPath(userId);
+
+
+    // ---------------------------------------------
+    // Pujar / substituir
+    // ---------------------------------------------
+
+    const { error } =
+        await supabaseClient.storage
+            .from(AVATAR_BUCKET)
+            .upload(
+                path,
+                file,
+                {
+                    cacheControl: "3600",
+                    upsert: true,
+                    contentType: file.type
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Error pujant avatar:",
+            error.message
+        );
+
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+
+
+    return {
+        success: true
+    };
+}
+
+
+// =========================================================
+// 13. FOTO — ELIMINAR
+// =========================================================
+
+async function deleteAvatar(userId) {
+
+    if (!userId) {
+
+        return {
+            success: false,
+            error: "No hi ha cap usuari connectat."
+        };
+    }
+
+
+    const path =
+        getAvatarPath(userId);
+
+
+    const { error } =
+        await supabaseClient.storage
+            .from(AVATAR_BUCKET)
+            .remove([
+                path
+            ]);
+
+
+    if (error) {
+
+        console.error(
+            "Error eliminant avatar:",
+            error.message
+        );
+
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+
+
+    return {
+        success: true
+    };
+}
+
+
+// =========================================================
+// 14. LOGIN MODAL
 // =========================================================
 
 function showLogin() {
@@ -311,6 +517,9 @@ function showLogin() {
 
     const content =
         document.getElementById("modalContent");
+
+
+    if (!modal || !content) return;
 
 
     content.innerHTML = `
@@ -329,11 +538,12 @@ function showLogin() {
                 Accedeix al teu espai educatiu.
             </p>
 
+
             <form id="loginForm">
 
                 <div class="auth-field">
 
-                    <label>
+                    <label for="loginEmail">
                         Correu electrònic
                     </label>
 
@@ -347,9 +557,10 @@ function showLogin() {
 
                 </div>
 
+
                 <div class="auth-field">
 
-                    <label>
+                    <label for="loginPassword">
                         Contrasenya
                     </label>
 
@@ -363,6 +574,7 @@ function showLogin() {
 
                 </div>
 
+
                 <button
                     type="submit"
                     class="btn primary auth-submit"
@@ -372,10 +584,12 @@ function showLogin() {
 
             </form>
 
+
             <div
                 id="authMessage"
                 class="auth-message"
             ></div>
+
 
             <p class="auth-switch">
 
@@ -408,7 +622,7 @@ function showLogin() {
 
 
 // =========================================================
-// REGISTRE — PAS 1
+// 15. REGISTRE — PAS 1
 // =========================================================
 
 function showSignup() {
@@ -418,6 +632,9 @@ function showSignup() {
 
     const content =
         document.getElementById("modalContent");
+
+
+    if (!modal || !content) return;
 
 
     content.innerHTML = `
@@ -436,6 +653,7 @@ function showSignup() {
                 Primer, explica'ns quin tipus de compte vols.
             </p>
 
+
             <div class="account-type-grid">
 
                 <button
@@ -443,7 +661,10 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('student')"
                 >
-                    <span class="account-type-icon">🎓</span>
+
+                    <span class="account-type-icon">
+                        🎓
+                    </span>
 
                     <strong>
                         Estudiant
@@ -453,6 +674,7 @@ function showSignup() {
                         Estudia amb Horizon AI encara que
                         el teu centre no utilitzi Horizon270.edu.
                     </small>
+
                 </button>
 
 
@@ -461,15 +683,20 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('teacher')"
                 >
-                    <span class="account-type-icon">👨‍🏫</span>
+
+                    <span class="account-type-icon">
+                        👨‍🏫
+                    </span>
 
                     <strong>
                         Professor
                     </strong>
 
                     <small>
-                        Gestiona el teu espai educatiu.
+                        Gestiona el teu espai educatiu
+                        encara que el teu centre no hi participi.
                     </small>
+
                 </button>
 
 
@@ -478,15 +705,20 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('center')"
                 >
-                    <span class="account-type-icon">🏫</span>
+
+                    <span class="account-type-icon">
+                        🏫
+                    </span>
 
                     <strong>
                         Centre educatiu
                     </strong>
 
                     <small>
-                        Escola, institut, acadèmia o centre educatiu.
+                        Escola, institut, acadèmia o
+                        centre educatiu independent.
                     </small>
+
                 </button>
 
 
@@ -495,15 +727,20 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('family')"
                 >
-                    <span class="account-type-icon">👨‍👩‍👧</span>
+
+                    <span class="account-type-icon">
+                        👨‍👩‍👧
+                    </span>
 
                     <strong>
                         Família
                     </strong>
 
                     <small>
-                        Connecta't amb l'espai educatiu familiar.
+                        Connecta't amb l'espai educatiu
+                        del teu fill o filla.
                     </small>
+
                 </button>
 
 
@@ -512,15 +749,20 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('professional')"
                 >
-                    <span class="account-type-icon">🧑‍💼</span>
+
+                    <span class="account-type-icon">
+                        🧑‍💼
+                    </span>
 
                     <strong>
                         Professional educatiu
                     </strong>
 
                     <small>
-                        Orientació, suport i altres funcions educatives.
+                        Orientació, suport i altres
+                        funcions educatives.
                     </small>
+
                 </button>
 
             </div>
@@ -555,10 +797,12 @@ function showSignup() {
 
 
 // =========================================================
-// REGISTRE — PAS 2
+// 16. REGISTRE — PAS 2
 // =========================================================
 
-function selectAccountType(accountType) {
+function selectAccountType(
+    accountType
+) {
 
     const labels = {
 
@@ -576,7 +820,12 @@ function selectAccountType(accountType) {
 
 
     const modalContent =
-        document.getElementById("modalContent");
+        document.getElementById(
+            "modalContent"
+        );
+
+
+    if (!modalContent) return;
 
 
     modalContent.innerHTML = `
@@ -584,7 +833,9 @@ function selectAccountType(accountType) {
         <div class="auth-container">
 
             <span class="eyebrow">
-                ${escapeHTML(labels[accountType])}
+                ${escapeHTML(
+                    labels[accountType] || "HORIZON270.EDU"
+                )}
             </span>
 
             <h2>
@@ -600,7 +851,7 @@ function selectAccountType(accountType) {
 
                 <div class="auth-field">
 
-                    <label>
+                    <label for="signupName">
                         Nom
                     </label>
 
@@ -618,7 +869,7 @@ function selectAccountType(accountType) {
 
                 <div class="auth-field">
 
-                    <label>
+                    <label for="signupEmail">
                         Correu electrònic
                     </label>
 
@@ -635,7 +886,7 @@ function selectAccountType(accountType) {
 
                 <div class="auth-field">
 
-                    <label>
+                    <label for="signupPassword">
                         Contrasenya
                     </label>
 
@@ -654,7 +905,7 @@ function selectAccountType(accountType) {
                 <input
                     type="hidden"
                     id="signupAccountType"
-                    value="${accountType}"
+                    value="${escapeHTML(accountType)}"
                 >
 
 
@@ -679,7 +930,7 @@ function selectAccountType(accountType) {
                 class="back-button"
                 onclick="showSignup()"
             >
-                ← Tornar
+                ← Tornar a seleccionar tipus
             </button>
 
         </div>
@@ -697,7 +948,7 @@ function selectAccountType(accountType) {
 
 
 // =========================================================
-// HANDLE SIGNUP
+// 17. HANDLE SIGNUP
 // =========================================================
 
 async function handleSignup(event) {
@@ -731,7 +982,31 @@ async function handleSignup(event) {
             .value;
 
 
-    showMessage("Creant el compte...");
+    if (!name) {
+
+        showMessage(
+            "Escriu el teu nom.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    if (password.length < 6) {
+
+        showMessage(
+            "La contrasenya ha de tenir almenys 6 caràcters.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    showMessage(
+        "Creant el compte..."
+    );
 
 
     const result =
@@ -771,7 +1046,7 @@ async function handleSignup(event) {
     if (!result.data.session) {
 
         showMessage(
-            "El compte s'ha creat però no hi ha sessió activa.",
+            "El compte s'ha creat, però encara no hi ha una sessió activa.",
             "error"
         );
 
@@ -790,7 +1065,7 @@ async function handleSignup(event) {
     if (!profileResult.success) {
 
         showMessage(
-            "Compte creat però error creant el perfil: " +
+            "El compte s'ha creat, però no s'ha pogut crear el perfil: " +
             profileResult.error,
             "error"
         );
@@ -799,21 +1074,26 @@ async function handleSignup(event) {
     }
 
 
-    closeModal();
-
-
-    showDashboard(
-        result.data.user,
-        profileResult.data
+    showMessage(
+        "Compte creat. Entrant..."
     );
 
 
-    updateNavigation();
+    setTimeout(() => {
+
+        closeModal();
+
+        showDashboard(
+            result.data.user,
+            profileResult.data
+        );
+
+    }, 400);
 }
 
 
 // =========================================================
-// HANDLE LOGIN
+// 18. HANDLE LOGIN
 // =========================================================
 
 async function handleLogin(event) {
@@ -834,7 +1114,9 @@ async function handleLogin(event) {
             .value;
 
 
-    showMessage("Iniciant sessió...");
+    showMessage(
+        "Iniciant sessió..."
+    );
 
 
     const result =
@@ -862,21 +1144,26 @@ async function handleLogin(event) {
         );
 
 
-    closeModal();
-
-
-    showDashboard(
-        result.data.user,
-        profile
+    showMessage(
+        "Sessió iniciada. Entrant..."
     );
 
 
-    updateNavigation();
+    setTimeout(() => {
+
+        closeModal();
+
+        showDashboard(
+            result.data.user,
+            profile
+        );
+
+    }, 400);
 }
 
 
 // =========================================================
-// MODAL
+// 19. MODAL
 // =========================================================
 
 function closeModal() {
@@ -894,46 +1181,13 @@ function closeModal() {
 
 
 // =========================================================
-// OCULTAR CAPÇALERA PÚBLICA
+// 20. DASHBOARD
 // =========================================================
 
-function hidePublicHeader() {
-
-    const navbar =
-        document.querySelector(".navbar");
-
-
-    if (navbar) {
-
-        navbar.style.display = "none";
-
-    }
-}
-
-
-// =========================================================
-// MOSTRAR CAPÇALERA PÚBLICA
-// =========================================================
-
-function showPublicHeader() {
-
-    const navbar =
-        document.querySelector(".navbar");
-
-
-    if (navbar) {
-
-        navbar.style.display = "";
-
-    }
-}
-
-
-// =========================================================
-// DASHBOARD
-// =========================================================
-
-function showDashboard(user, profile = null) {
+async function showDashboard(
+    user,
+    profile = null
+) {
 
     const main =
         document.querySelector("main");
@@ -943,11 +1197,6 @@ function showDashboard(user, profile = null) {
 
 
     if (!main) return;
-
-
-    // IMPORTANT:
-    // Amaguem completament la web pública.
-    hidePublicHeader();
 
 
     main.style.display = "none";
@@ -991,6 +1240,10 @@ function showDashboard(user, profile = null) {
         "student";
 
 
+    const avatarUrl =
+        await getAvatarUrl(user.id);
+
+
     const accountLabels = {
 
         student: "Estudiant",
@@ -1009,6 +1262,7 @@ function showDashboard(user, profile = null) {
     dashboard.innerHTML = `
 
         <div class="dashboard-shell">
+
 
             <aside class="dashboard-sidebar">
 
@@ -1131,11 +1385,13 @@ function showDashboard(user, profile = null) {
 
                         <div class="avatar">
 
-                            ${escapeHTML(
-                                displayName
-                                    .charAt(0)
-                                    .toUpperCase()
-                            )}
+                            ${
+                                avatarUrl
+                                    ? `<img src="${escapeHTML(avatarUrl)}" alt="Foto de perfil">`
+                                    : escapeHTML(
+                                        getInitial(displayName)
+                                    )
+                            }
 
                         </div>
 
@@ -1170,14 +1426,18 @@ function showDashboard(user, profile = null) {
 
 
 // =========================================================
-// DASHBOARD HOME
+// 21. DASHBOARD HOME
 // =========================================================
 
 function showDashboardHome(view) {
 
+    if (!view) return;
+
+
     view.innerHTML = `
 
         <div class="dashboard-grid">
+
 
             <article class="dashboard-card dashboard-card-main">
 
@@ -1286,7 +1546,7 @@ function showDashboardHome(view) {
 
 
 // =========================================================
-// DASHBOARD SECTIONS
+// 22. DASHBOARD SECTIONS
 // =========================================================
 
 function dashboardSection(section) {
@@ -1395,7 +1655,7 @@ function dashboardSection(section) {
 
 
 // =========================================================
-// PLACEHOLDER
+// 23. PLACEHOLDER
 // =========================================================
 
 function showDashboardPlaceholder(
@@ -1431,7 +1691,7 @@ function showDashboardPlaceholder(
 
 
 // =========================================================
-// HORIZON AI
+// 24. HORIZON AI
 // =========================================================
 
 function showDashboardAI(view) {
@@ -1534,10 +1794,13 @@ function showDashboardAI(view) {
 
 
 // =========================================================
-// PROFILE
+// 25. PERFIL
 // =========================================================
 
 async function showDashboardProfile(view) {
+
+    if (!view) return;
+
 
     const user =
         await getCurrentUser();
@@ -1583,6 +1846,10 @@ async function showDashboardProfile(view) {
         "student";
 
 
+    const avatarUrl =
+        await getAvatarUrl(user.id);
+
+
     view.innerHTML = `
 
         <section class="dashboard-profile-page">
@@ -1598,13 +1865,61 @@ async function showDashboardProfile(view) {
 
             <div class="profile-card">
 
-                <div class="profile-avatar">
+                <div class="profile-avatar-wrapper">
 
-                    ${escapeHTML(
-                        displayName
-                            .charAt(0)
-                            .toUpperCase()
-                    )}
+                    <div class="profile-avatar">
+
+                        ${
+                            avatarUrl
+                                ? `<img
+                                    src="${escapeHTML(avatarUrl)}"
+                                    alt="Foto de perfil"
+                                  >`
+                                : escapeHTML(
+                                    getInitial(displayName)
+                                )
+                        }
+
+                    </div>
+
+
+                    <div class="profile-photo-actions">
+
+                        <label
+                            for="avatarInput"
+                            class="btn secondary"
+                        >
+                            Canviar foto
+                        </label>
+
+                        <input
+                            id="avatarInput"
+                            type="file"
+                            accept="image/*"
+                            hidden
+                        >
+
+
+                        ${
+                            avatarUrl
+                                ? `
+                                    <button
+                                        type="button"
+                                        class="btn secondary"
+                                        id="deleteAvatarButton"
+                                    >
+                                        Eliminar foto
+                                    </button>
+                                  `
+                                : ""
+                        }
+
+                    </div>
+
+
+                    <small class="profile-photo-help">
+                        JPG, PNG o WEBP · màxim 5 MB
+                    </small>
 
                 </div>
 
@@ -1615,9 +1930,26 @@ async function showDashboardProfile(view) {
                         NOM
                     </span>
 
-                    <strong>
-                        ${escapeHTML(displayName)}
-                    </strong>
+
+                    <div class="profile-edit-row">
+
+                        <input
+                            id="profileNameInput"
+                            type="text"
+                            maxlength="80"
+                            value="${escapeHTML(displayName)}"
+                        >
+
+
+                        <button
+                            type="button"
+                            class="btn primary"
+                            id="saveProfileName"
+                        >
+                            Desar
+                        </button>
+
+                    </div>
 
 
                     <span class="profile-label">
@@ -1642,17 +1974,11 @@ async function showDashboardProfile(view) {
                         )}
                     </strong>
 
-                </div>
 
-
-                <div class="profile-edit">
-
-                    <button
-                        class="btn primary"
-                        onclick="enableProfileEdit()"
-                    >
-                        Editar perfil
-                    </button>
+                    <div
+                        id="profileMessage"
+                        class="profile-message"
+                    ></div>
 
                 </div>
 
@@ -1661,232 +1987,381 @@ async function showDashboardProfile(view) {
         </section>
 
     `;
-}
 
 
-// =========================================================
-// EDITAR PERFIL
-// =========================================================
+    // =====================================================
+    // CANVI DE NOM
+    // =====================================================
 
-function enableProfileEdit() {
-
-    const info =
-        document.querySelector(
-            ".profile-info"
-        );
-
-
-    if (!info) return;
-
-
-    const nameElement =
-        info.querySelector(
-            "strong"
-        );
-
-
-    const currentName =
-        nameElement?.textContent?.trim() ||
-        "";
-
-
-    info.innerHTML = `
-
-        <div class="auth-field">
-
-            <label>
-                Nom
-            </label>
-
-            <input
-                id="editProfileName"
-                type="text"
-                maxlength="80"
-                value="${escapeHTML(currentName)}"
-                autocomplete="name"
-            >
-
-        </div>
-
-
-        <div class="profile-edit-actions">
-
-            <button
-                class="btn primary"
-                onclick="saveProfileChanges()"
-            >
-                Guardar canvis
-            </button>
-
-
-            <button
-                class="btn secondary"
-                onclick="dashboardSection('profile')"
-            >
-                Cancel·lar
-            </button>
-
-        </div>
-
-    `;
-}
-
-
-// =========================================================
-// GUARDAR PERFIL
-// =========================================================
-
-async function saveProfileChanges() {
-
-    const input =
+    const saveButton =
         document.getElementById(
-            "editProfileName"
+            "saveProfileName"
         );
 
 
-    if (!input) return;
+    if (saveButton) {
+
+        saveButton.addEventListener(
+            "click",
+            async () => {
+
+                const input =
+                    document.getElementById(
+                        "profileNameInput"
+                    );
 
 
-    const newName =
-        input.value.trim();
+                const newName =
+                    input.value.trim();
 
 
-    if (!newName) {
+                const message =
+                    document.getElementById(
+                        "profileMessage"
+                    );
 
-        alert(
-            "El nom no pot estar buit."
+
+                if (!newName) {
+
+                    if (message) {
+
+                        message.className =
+                            "profile-message error";
+
+                        message.textContent =
+                            "El nom no pot estar buit.";
+
+                    }
+
+                    return;
+                }
+
+
+                saveButton.disabled = true;
+
+                saveButton.textContent =
+                    "Desant...";
+
+
+                const result =
+                    await updateProfileName(
+                        user.id,
+                        newName
+                    );
+
+
+                if (!result.success) {
+
+                    if (message) {
+
+                        message.className =
+                            "profile-message error";
+
+                        message.textContent =
+                            "No s'han pogut guardar els canvis: " +
+                            result.error;
+
+                    }
+
+                    saveButton.disabled = false;
+
+                    saveButton.textContent =
+                        "Desar";
+
+                    return;
+                }
+
+
+                // També actualitzem metadata
+                // per mantenir el nom sincronitzat.
+
+                await supabaseClient.auth.updateUser({
+
+                    data: {
+                        display_name: newName
+                    }
+
+                });
+
+
+                if (message) {
+
+                    message.className =
+                        "profile-message success";
+
+                    message.textContent =
+                        "Canvis guardats correctament.";
+
+                }
+
+
+                saveButton.disabled = false;
+
+                saveButton.textContent =
+                    "Desat ✓";
+
+
+                // Actualitzar avatar/header
+                // sense sortir del perfil.
+
+                const dashboardAvatar =
+                    document.querySelector(
+                        ".dashboard-header .avatar"
+                    );
+
+
+                if (
+                    dashboardAvatar &&
+                    !avatarUrl
+                ) {
+
+                    dashboardAvatar.textContent =
+                        getInitial(newName);
+
+                }
+
+            }
         );
 
-        return;
     }
 
 
-    const user =
-        await getCurrentUser();
+    // =====================================================
+    // PUJAR FOTO
+    // =====================================================
 
-
-    if (!user) {
-
-        alert(
-            "La sessió ha caducat."
+    const avatarInput =
+        document.getElementById(
+            "avatarInput"
         );
 
-        return;
+
+    if (avatarInput) {
+
+        avatarInput.addEventListener(
+            "change",
+            async () => {
+
+                const file =
+                    avatarInput.files?.[0];
+
+
+                if (!file) return;
+
+
+                const message =
+                    document.getElementById(
+                        "profileMessage"
+                    );
+
+
+                if (message) {
+
+                    message.className =
+                        "profile-message";
+
+                    message.textContent =
+                        "Pujant la foto...";
+
+                }
+
+
+                avatarInput.disabled =
+                    true;
+
+
+                const result =
+                    await uploadAvatar(
+                        user.id,
+                        file
+                    );
+
+
+                if (!result.success) {
+
+                    if (message) {
+
+                        message.className =
+                            "profile-message error";
+
+                        message.textContent =
+                            "No s'ha pogut pujar la foto: " +
+                            result.error;
+
+                    }
+
+                    avatarInput.disabled =
+                        false;
+
+                    avatarInput.value = "";
+
+                    return;
+                }
+
+
+                if (message) {
+
+                    message.className =
+                        "profile-message success";
+
+                    message.textContent =
+                        "Foto actualitzada correctament.";
+
+                }
+
+
+                avatarInput.disabled =
+                    false;
+
+                avatarInput.value = "";
+
+
+                // Tornar a carregar el perfil
+                // amb la nova fotografia.
+
+                await showDashboardProfile(
+                    view
+                );
+
+
+                // Actualitzar també l'avatar
+                // de la capçalera.
+
+                const newAvatarUrl =
+                    await getAvatarUrl(
+                        user.id
+                    );
+
+
+                const dashboardAvatar =
+                    document.querySelector(
+                        ".dashboard-header .avatar"
+                    );
+
+
+                if (
+                    dashboardAvatar &&
+                    newAvatarUrl
+                ) {
+
+                    dashboardAvatar.innerHTML =
+                        `<img
+                            src="${escapeHTML(newAvatarUrl)}"
+                            alt="Foto de perfil"
+                        >`;
+
+                }
+
+            }
+        );
+
     }
 
 
-    const button =
-        document.querySelector(
-            ".profile-edit-actions .primary"
+    // =====================================================
+    // ELIMINAR FOTO
+    // =====================================================
+
+    const deleteAvatarButton =
+        document.getElementById(
+            "deleteAvatarButton"
         );
 
 
-    if (button) {
+    if (deleteAvatarButton) {
 
-        button.disabled = true;
+        deleteAvatarButton.addEventListener(
+            "click",
+            async () => {
 
-        button.textContent =
-            "Guardant...";
+                const message =
+                    document.getElementById(
+                        "profileMessage"
+                    );
+
+
+                deleteAvatarButton.disabled =
+                    true;
+
+
+                deleteAvatarButton.textContent =
+                    "Eliminant...";
+
+
+                const result =
+                    await deleteAvatar(
+                        user.id
+                    );
+
+
+                if (!result.success) {
+
+                    if (message) {
+
+                        message.className =
+                            "profile-message error";
+
+                        message.textContent =
+                            "No s'ha pogut eliminar la foto: " +
+                            result.error;
+
+                    }
+
+                    deleteAvatarButton.disabled =
+                        false;
+
+                    deleteAvatarButton.textContent =
+                        "Eliminar foto";
+
+                    return;
+                }
+
+
+                if (message) {
+
+                    message.className =
+                        "profile-message success";
+
+                    message.textContent =
+                        "Foto eliminada correctament.";
+
+                }
+
+
+                // Actualitzar tota la vista.
+
+                await showDashboardProfile(
+                    view
+                );
+
+
+                // Actualitzar avatar del header.
+
+                const dashboardAvatar =
+                    document.querySelector(
+                        ".dashboard-header .avatar"
+                    );
+
+
+                if (dashboardAvatar) {
+
+                    dashboardAvatar.innerHTML =
+                        escapeHTML(
+                            getInitial(displayName)
+                        );
+
+                }
+
+            }
+        );
 
     }
-
-
-    const result =
-        await updateProfile(
-            user.id,
-            newName
-        );
-
-
-    if (!result.success) {
-
-        alert(
-            "No s'han pogut guardar els canvis: " +
-            result.error
-        );
-
-        if (button) {
-
-            button.disabled = false;
-
-            button.textContent =
-                "Guardar canvis";
-
-        }
-
-        return;
-    }
-
-
-    // Tornem a carregar el perfil des de Supabase.
-    dashboardSection("profile");
-
-
-    // Actualitzem també el nom de la capçalera del dashboard.
-    setTimeout(() => {
-
-        refreshDashboardHeader(
-            newName
-        );
-
-    }, 100);
 
 }
 
 
 // =========================================================
-// ACTUALITZAR NOM DE LA CAPÇALERA DEL DASHBOARD
-// =========================================================
-
-function refreshDashboardHeader(name) {
-
-    const header =
-        document.querySelector(
-            ".dashboard-header h1"
-        );
-
-
-    if (header) {
-
-        header.textContent =
-            `Hola, ${name}.`;
-
-    }
-
-
-    const avatar =
-        document.querySelector(
-            ".dashboard-header .avatar"
-        );
-
-
-    if (avatar) {
-
-        avatar.textContent =
-            name
-                .charAt(0)
-                .toUpperCase();
-
-    }
-
-
-    const publicName =
-        document.querySelector(
-            ".user-email"
-        );
-
-
-    if (publicName) {
-
-        publicName.textContent =
-            name;
-
-    }
-}
-
-
-// =========================================================
-// LOGOUT
+// 26. LOGOUT
 // =========================================================
 
 async function handleLogout() {
@@ -1914,7 +2389,7 @@ async function handleLogout() {
 
 
 // =========================================================
-// REMOVE DASHBOARD
+// 27. REMOVE DASHBOARD
 // =========================================================
 
 function removeDashboard() {
@@ -1934,7 +2409,7 @@ function removeDashboard() {
 
 
 // =========================================================
-// LANDING
+// 28. LANDING
 // =========================================================
 
 function showLanding() {
@@ -1944,10 +2419,6 @@ function showLanding() {
 
     const footer =
         document.querySelector("footer");
-
-
-    // Tornem a mostrar la web pública.
-    showPublicHeader();
 
 
     if (main) {
@@ -1969,7 +2440,7 @@ function showLanding() {
 
 
 // =========================================================
-// NAVIGATION
+// 29. NAVIGATION
 // =========================================================
 
 async function updateNavigation() {
@@ -2037,7 +2508,7 @@ async function updateNavigation() {
 
 
 // =========================================================
-// OPEN DASHBOARD
+// 30. OPEN DASHBOARD
 // =========================================================
 
 async function openDashboard() {
@@ -2062,7 +2533,6 @@ async function openDashboard() {
 
     closeModal();
 
-
     showDashboard(
         user,
         profile
@@ -2071,7 +2541,7 @@ async function openDashboard() {
 
 
 // =========================================================
-// AUTH STATE
+// 31. AUTH STATE
 // =========================================================
 
 supabaseClient.auth.onAuthStateChange(
@@ -2104,10 +2574,12 @@ supabaseClient.auth.onAuthStateChange(
 
 
 // =========================================================
-// SCROLL
+// 32. SCROLL
 // =========================================================
 
-function scrollToSection(sectionId) {
+function scrollToSection(
+    sectionId
+) {
 
     const section =
         document.getElementById(
@@ -2125,7 +2597,7 @@ function scrollToSection(sectionId) {
 
 
 // =========================================================
-// INIT
+// 33. INIT
 // =========================================================
 
 document.addEventListener(
