@@ -1,11 +1,6 @@
 // =========================================================
 // HORIZON270.EDU
-// Supabase + Authentication + Dashboard
-// =========================================================
-
-
-// =========================================================
-// 1. SUPABASE
+// Supabase + Authentication + Profiles + Dashboard
 // =========================================================
 
 const SUPABASE_URL = "https://cecouhunurwkncfcjjor.supabase.co";
@@ -20,7 +15,35 @@ const supabaseClient = window.supabase.createClient(
 
 
 // =========================================================
-// 2. REGISTER
+// UTILITATS
+// =========================================================
+
+function escapeHTML(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+function showMessage(message, type = "") {
+
+    const element =
+        document.getElementById("authMessage");
+
+    if (!element) return;
+
+    element.className =
+        "auth-message " + type;
+
+    element.textContent = message;
+}
+
+
+// =========================================================
+// AUTH — REGISTRE
 // =========================================================
 
 async function registerUser(email, password, displayName) {
@@ -28,15 +51,13 @@ async function registerUser(email, password, displayName) {
     const { data, error } =
         await supabaseClient.auth.signUp({
 
-            email: email,
-            password: password,
+            email,
+            password,
 
             options: {
-
                 data: {
                     display_name: displayName
                 }
-
             }
 
         });
@@ -53,20 +74,18 @@ async function registerUser(email, password, displayName) {
             success: false,
             error: error.message
         };
-
     }
 
 
     return {
         success: true,
-        data: data
+        data
     };
-
 }
 
 
 // =========================================================
-// 3. LOGIN
+// AUTH — LOGIN
 // =========================================================
 
 async function loginUser(email, password) {
@@ -74,8 +93,8 @@ async function loginUser(email, password) {
     const { data, error } =
         await supabaseClient.auth.signInWithPassword({
 
-            email: email,
-            password: password
+            email,
+            password
 
         });
 
@@ -91,20 +110,18 @@ async function loginUser(email, password) {
             success: false,
             error: error.message
         };
-
     }
 
 
     return {
         success: true,
-        data: data
+        data
     };
-
 }
 
 
 // =========================================================
-// 4. LOGOUT
+// AUTH — LOGOUT
 // =========================================================
 
 async function logoutUser() {
@@ -121,17 +138,15 @@ async function logoutUser() {
         );
 
         return false;
-
     }
 
 
     return true;
-
 }
 
 
 // =========================================================
-// 5. CURRENT USER
+// USUARI ACTUAL
 // =========================================================
 
 async function getCurrentUser() {
@@ -150,17 +165,93 @@ async function getCurrentUser() {
         );
 
         return null;
-
     }
 
 
     return user;
-
 }
 
 
 // =========================================================
-// 6. SHOW LOGIN
+// CREAR PERFIL
+// =========================================================
+
+async function createProfile(
+    userId,
+    displayName,
+    accountType
+) {
+
+    const { data, error } =
+        await supabaseClient
+            .from("profiles")
+            .insert({
+
+                id: userId,
+
+                display_name: displayName,
+
+                account_type: accountType,
+
+                is_active: true
+
+            })
+            .select()
+            .single();
+
+
+    if (error) {
+
+        console.error(
+            "Error creant perfil:",
+            error.message
+        );
+
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+
+
+    return {
+        success: true,
+        data
+    };
+}
+
+
+// =========================================================
+// OBTENIR PERFIL
+// =========================================================
+
+async function getProfile(userId) {
+
+    const { data, error } =
+        await supabaseClient
+            .from("profiles")
+            .select("*")
+            .eq("id", userId)
+            .maybeSingle();
+
+
+    if (error) {
+
+        console.error(
+            "Error obtenint perfil:",
+            error.message
+        );
+
+        return null;
+    }
+
+
+    return data;
+}
+
+
+// =========================================================
+// LOGIN MODAL
 // =========================================================
 
 function showLogin() {
@@ -185,13 +276,14 @@ function showLogin() {
             </h2>
 
             <p>
-                Accedeix al teu compte de Horizon270.edu.
+                Accedeix al teu espai educatiu.
             </p>
 
 
             <form id="loginForm">
 
-                <div>
+                <div class="auth-field">
+
                     <label for="loginEmail">
                         Correu electrònic
                     </label>
@@ -199,14 +291,16 @@ function showLogin() {
                     <input
                         id="loginEmail"
                         type="email"
-                        placeholder="tu@exemple.com"
                         autocomplete="email"
+                        placeholder="tu@exemple.com"
                         required
                     >
+
                 </div>
 
 
-                <div>
+                <div class="auth-field">
+
                     <label for="loginPassword">
                         Contrasenya
                     </label>
@@ -214,16 +308,17 @@ function showLogin() {
                     <input
                         id="loginPassword"
                         type="password"
-                        placeholder="La teva contrasenya"
                         autocomplete="current-password"
+                        placeholder="La teva contrasenya"
                         required
                     >
+
                 </div>
 
 
                 <button
                     type="submit"
-                    class="btn primary"
+                    class="btn primary auth-submit"
                 >
                     Iniciar sessió
                 </button>
@@ -239,7 +334,7 @@ function showLogin() {
 
             <p class="auth-switch">
 
-                Encara no tens compte?
+                No tens compte?
 
                 <button
                     type="button"
@@ -258,20 +353,17 @@ function showLogin() {
     modal.classList.remove("hidden");
 
 
-    const form =
-        document.getElementById("loginForm");
-
-
-    form.addEventListener(
-        "submit",
-        handleLogin
-    );
-
+    document
+        .getElementById("loginForm")
+        .addEventListener(
+            "submit",
+            handleLogin
+        );
 }
 
 
 // =========================================================
-// 7. SHOW SIGNUP
+// REGISTRE — PAS 1
 // =========================================================
 
 function showSignup() {
@@ -296,75 +388,124 @@ function showSignup() {
             </h2>
 
             <p>
-                Crea el teu compte de Horizon270.edu.
+                Primer, explica'ns quin tipus de compte vols.
             </p>
 
 
-            <form id="signupForm">
-
-
-                <div>
-
-                    <label for="signupName">
-                        Nom
-                    </label>
-
-                    <input
-                        id="signupName"
-                        type="text"
-                        placeholder="El teu nom"
-                        autocomplete="name"
-                        maxlength="80"
-                        required
-                    >
-
-                </div>
-
-
-                <div>
-
-                    <label for="signupEmail">
-                        Correu electrònic
-                    </label>
-
-                    <input
-                        id="signupEmail"
-                        type="email"
-                        placeholder="tu@exemple.com"
-                        autocomplete="email"
-                        required
-                    >
-
-                </div>
-
-
-                <div>
-
-                    <label for="signupPassword">
-                        Contrasenya
-                    </label>
-
-                    <input
-                        id="signupPassword"
-                        type="password"
-                        placeholder="Mínim 6 caràcters"
-                        autocomplete="new-password"
-                        minlength="6"
-                        required
-                    >
-
-                </div>
+            <div class="account-type-grid">
 
 
                 <button
-                    type="submit"
-                    class="btn primary"
+                    type="button"
+                    class="account-type"
+                    onclick="selectAccountType('student')"
                 >
-                    Crear compte
+
+                    <span class="account-type-icon">
+                        🎓
+                    </span>
+
+                    <strong>
+                        Estudiant
+                    </strong>
+
+                    <small>
+                        Estudia amb Horizon AI encara que
+                        el teu centre no utilitzi Horizon270.edu.
+                    </small>
+
                 </button>
 
 
-            </form>
+                <button
+                    type="button"
+                    class="account-type"
+                    onclick="selectAccountType('teacher')"
+                >
+
+                    <span class="account-type-icon">
+                        👨‍🏫
+                    </span>
+
+                    <strong>
+                        Professor
+                    </strong>
+
+                    <small>
+                        Gestiona el teu espai educatiu
+                        encara que el teu centre no hi participi.
+                    </small>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="account-type"
+                    onclick="selectAccountType('center')"
+                >
+
+                    <span class="account-type-icon">
+                        🏫
+                    </span>
+
+                    <strong>
+                        Centre educatiu
+                    </strong>
+
+                    <small>
+                        Escola, institut, acadèmia o
+                        centre educatiu independent.
+                    </small>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="account-type"
+                    onclick="selectAccountType('family')"
+                >
+
+                    <span class="account-type-icon">
+                        👨‍👩‍👧
+                    </span>
+
+                    <strong>
+                        Família
+                    </strong>
+
+                    <small>
+                        Connecta't amb l'espai educatiu
+                        del teu fill o filla.
+                    </small>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="account-type"
+                    onclick="selectAccountType('professional')"
+                >
+
+                    <span class="account-type-icon">
+                        🧑‍💼
+                    </span>
+
+                    <strong>
+                        Professional educatiu
+                    </strong>
+
+                    <small>
+                        Orientació, suport i altres
+                        funcions educatives.
+                    </small>
+
+                </button>
+
+
+            </div>
 
 
             <div
@@ -392,22 +533,157 @@ function showSignup() {
 
 
     modal.classList.remove("hidden");
-
-
-    const form =
-        document.getElementById("signupForm");
-
-
-    form.addEventListener(
-        "submit",
-        handleSignup
-    );
-
 }
 
 
 // =========================================================
-// 8. HANDLE SIGNUP
+// REGISTRE — PAS 2
+// =========================================================
+
+function selectAccountType(accountType) {
+
+    const labels = {
+
+        student: "Estudiant",
+
+        teacher: "Professor",
+
+        center: "Centre educatiu",
+
+        family: "Família",
+
+        professional: "Professional educatiu"
+
+    };
+
+
+    const modalContent =
+        document.getElementById("modalContent");
+
+
+    modalContent.innerHTML = `
+
+        <div class="auth-container">
+
+            <span class="eyebrow">
+                ${escapeHTML(
+                    labels[accountType]
+                )}
+            </span>
+
+            <h2>
+                Crea el teu compte
+            </h2>
+
+            <p>
+                Completa les dades per continuar.
+            </p>
+
+
+            <form id="signupForm">
+
+
+                <div class="auth-field">
+
+                    <label for="signupName">
+                        Nom
+                    </label>
+
+                    <input
+                        id="signupName"
+                        type="text"
+                        autocomplete="name"
+                        placeholder="El teu nom"
+                        maxlength="80"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="auth-field">
+
+                    <label for="signupEmail">
+                        Correu electrònic
+                    </label>
+
+                    <input
+                        id="signupEmail"
+                        type="email"
+                        autocomplete="email"
+                        placeholder="tu@exemple.com"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="auth-field">
+
+                    <label for="signupPassword">
+                        Contrasenya
+                    </label>
+
+                    <input
+                        id="signupPassword"
+                        type="password"
+                        autocomplete="new-password"
+                        minlength="6"
+                        placeholder="Mínim 6 caràcters"
+                        required
+                    >
+
+                </div>
+
+
+                <input
+                    type="hidden"
+                    id="signupAccountType"
+                    value="${accountType}"
+                >
+
+
+                <button
+                    type="submit"
+                    class="btn primary auth-submit"
+                >
+                    Crear compte
+                </button>
+
+
+            </form>
+
+
+            <div
+                id="authMessage"
+                class="auth-message"
+            ></div>
+
+
+            <button
+                type="button"
+                class="back-button"
+                onclick="showSignup()"
+            >
+                ← Tornar a seleccionar tipus
+            </button>
+
+        </div>
+
+    `;
+
+
+    document
+        .getElementById("signupForm")
+        .addEventListener(
+            "submit",
+            handleSignup
+        );
+}
+
+
+// =========================================================
+// HANDLE SIGNUP
 // =========================================================
 
 async function handleSignup(event) {
@@ -435,32 +711,37 @@ async function handleSignup(event) {
             .value;
 
 
-    const message =
-        document.getElementById("authMessage");
+    const accountType =
+        document
+            .getElementById("signupAccountType")
+            .value;
 
 
     if (!name) {
 
-        message.textContent =
-            "Escriu el teu nom.";
+        showMessage(
+            "Escriu el teu nom.",
+            "error"
+        );
 
         return;
-
     }
 
 
     if (password.length < 6) {
 
-        message.textContent =
-            "La contrasenya ha de tenir almenys 6 caràcters.";
+        showMessage(
+            "La contrasenya ha de tenir almenys 6 caràcters.",
+            "error"
+        );
 
         return;
-
     }
 
 
-    message.textContent =
-        "Creant el compte...";
+    showMessage(
+        "Creant el compte..."
+    );
 
 
     const result =
@@ -473,19 +754,19 @@ async function handleSignup(event) {
 
     if (!result.success) {
 
-        message.textContent =
+        showMessage(
             "No s'ha pogut crear el compte: " +
-            result.error;
+            result.error,
+            "error"
+        );
 
         return;
-
     }
 
 
     /*
-     * Si Supabase requereix confirmació
-     * del correu, encara no existeix
-     * una sessió activa.
+     * Supabase pot requerir confirmació
+     * del correu abans de crear una sessió.
      */
 
     if (
@@ -493,56 +774,70 @@ async function handleSignup(event) {
         !result.data.session
     ) {
 
-        message.innerHTML = `
-
-            <div class="auth-success">
-
-                <strong>
-                    Compte creat correctament.
-                </strong>
-
-                <p>
-                    Revisa el teu correu electrònic
-                    per confirmar el compte.
-                </p>
-
-            </div>
-
-        `;
+        showMessage(
+            "Compte creat. Revisa el teu correu per confirmar-lo.",
+            "success"
+        );
 
         return;
+    }
 
+
+    if (!result.data.session) {
+
+        showMessage(
+            "El compte s'ha creat, però encara no hi ha una sessió activa.",
+            "error"
+        );
+
+        return;
     }
 
 
     /*
-     * Si tenim sessió immediatament,
-     * entrem directament al Dashboard.
+     * Crear perfil.
      */
 
-    if (result.data.session) {
+    const profileResult =
+        await createProfile(
+            result.data.user.id,
+            name,
+            accountType
+        );
 
-        message.textContent =
-            "Compte creat. Entrant...";
 
+    if (!profileResult.success) {
 
-        setTimeout(() => {
+        showMessage(
+            "El compte s'ha creat, però no s'ha pogut crear el perfil: " +
+            profileResult.error,
+            "error"
+        );
 
-            closeModal();
-
-            showDashboard(
-                result.data.user
-            );
-
-        }, 400);
-
+        return;
     }
 
+
+    showMessage(
+        "Compte creat. Entrant..."
+    );
+
+
+    setTimeout(() => {
+
+        closeModal();
+
+        showDashboard(
+            result.data.user,
+            profileResult.data
+        );
+
+    }, 400);
 }
 
 
 // =========================================================
-// 9. HANDLE LOGIN
+// HANDLE LOGIN
 // =========================================================
 
 async function handleLogin(event) {
@@ -563,12 +858,9 @@ async function handleLogin(event) {
             .value;
 
 
-    const message =
-        document.getElementById("authMessage");
-
-
-    message.textContent =
-        "Iniciant sessió...";
+    showMessage(
+        "Iniciant sessió..."
+    );
 
 
     const result =
@@ -580,17 +872,25 @@ async function handleLogin(event) {
 
     if (!result.success) {
 
-        message.textContent =
+        showMessage(
             "No s'ha pogut iniciar sessió: " +
-            result.error;
+            result.error,
+            "error"
+        );
 
         return;
-
     }
 
 
-    message.textContent =
-        "Sessió iniciada. Entrant...";
+    const profile =
+        await getProfile(
+            result.data.user.id
+        );
+
+
+    showMessage(
+        "Sessió iniciada. Entrant..."
+    );
 
 
     setTimeout(() => {
@@ -598,16 +898,16 @@ async function handleLogin(event) {
         closeModal();
 
         showDashboard(
-            result.data.user
+            result.data.user,
+            profile
         );
 
     }, 400);
-
 }
 
 
 // =========================================================
-// 10. CLOSE MODAL
+// MODAL
 // =========================================================
 
 function closeModal() {
@@ -616,16 +916,19 @@ function closeModal() {
         document.getElementById("modal");
 
 
-    modal.classList.add("hidden");
+    if (modal) {
 
+        modal.classList.add("hidden");
+
+    }
 }
 
 
 // =========================================================
-// 11. LANDING PAGE
+// DASHBOARD
 // =========================================================
 
-function showLanding() {
+function showDashboard(user, profile = null) {
 
     const main =
         document.querySelector("main");
@@ -634,46 +937,8 @@ function showLanding() {
         document.querySelector("footer");
 
 
-    if (main) {
+    if (!main) return;
 
-        main.style.display = "";
-
-    }
-
-
-    if (footer) {
-
-        footer.style.display = "";
-
-    }
-
-
-    removeDashboard();
-
-}
-
-
-// =========================================================
-// 12. DASHBOARD
-// =========================================================
-
-function showDashboard(user) {
-
-    const main =
-        document.querySelector("main");
-
-    const footer =
-        document.querySelector("footer");
-
-
-    if (!main) {
-        return;
-    }
-
-
-    /*
-     * Amaguem la landing.
-     */
 
     main.style.display = "none";
 
@@ -705,17 +970,36 @@ function showDashboard(user) {
 
 
     const displayName =
+        profile?.display_name ||
         metadata.display_name ||
         user?.email?.split("@")[0] ||
         "Usuari";
+
+
+    const accountType =
+        profile?.account_type ||
+        "student";
+
+
+    const accountLabels = {
+
+        student: "Estudiant",
+
+        teacher: "Professor",
+
+        center: "Centre educatiu",
+
+        family: "Família",
+
+        professional: "Professional educatiu"
+
+    };
 
 
     dashboard.innerHTML = `
 
         <div class="dashboard-shell">
 
-
-            <!-- SIDEBAR -->
 
             <aside class="dashboard-sidebar">
 
@@ -788,6 +1072,16 @@ function showDashboard(user) {
 
                 <div class="dashboard-sidebar-bottom">
 
+                    <div class="dashboard-account-type">
+
+                        ${escapeHTML(
+                            accountLabels[accountType] ||
+                            "Usuari"
+                        )}
+
+                    </div>
+
+
                     <button
                         class="dashboard-logout"
                         onclick="handleLogout()"
@@ -800,17 +1094,17 @@ function showDashboard(user) {
             </aside>
 
 
-            <!-- CONTENT -->
-
             <section class="dashboard-content">
-
 
                 <header class="dashboard-header">
 
                     <div>
 
                         <span class="eyebrow">
-                            HORIZON270.EDU
+                            ${escapeHTML(
+                                accountLabels[accountType] ||
+                                "HORIZON270.EDU"
+                            )}
                         </span>
 
                         <h1>
@@ -827,11 +1121,13 @@ function showDashboard(user) {
                     <div class="dashboard-profile">
 
                         <div class="avatar">
+
                             ${escapeHTML(
                                 displayName
                                     .charAt(0)
                                     .toUpperCase()
                             )}
+
                         </div>
 
                     </div>
@@ -839,123 +1135,10 @@ function showDashboard(user) {
                 </header>
 
 
-                <!-- DASHBOARD HOME -->
-
                 <div
                     id="dashboard-view"
                     class="dashboard-view"
-                >
-
-                    <div class="dashboard-grid">
-
-
-                        <article class="dashboard-card dashboard-card-main">
-
-                            <div class="dashboard-card-icon">
-                                ✦
-                            </div>
-
-                            <span class="dashboard-card-label">
-                                HORITZÓ D'APRENENTATGE
-                            </span>
-
-                            <h2>
-                                El teu aprenentatge,
-                                <span>al teu ritme.</span>
-                            </h2>
-
-                            <p>
-                                Horizon270.edu t'ajudarà a entendre
-                                què domines, què necessites reforçar
-                                i quin és el següent pas.
-                            </p>
-
-                            <button
-                                class="btn primary"
-                                onclick="dashboardSection('ai')"
-                            >
-                                Obrir Horizon AI →
-                            </button>
-
-                        </article>
-
-
-                        <article class="dashboard-card">
-
-                            <span class="dashboard-card-label">
-                                PROGRÉS
-                            </span>
-
-                            <div class="dashboard-stat">
-                                —
-                            </div>
-
-                            <p>
-                                Encara no hi ha dades
-                                d'aprenentatge.
-                            </p>
-
-                        </article>
-
-
-                        <article class="dashboard-card">
-
-                            <span class="dashboard-card-label">
-                                TASQUES
-                            </span>
-
-                            <div class="dashboard-stat">
-                                0
-                            </div>
-
-                            <p>
-                                Tasques pendents
-                            </p>
-
-                        </article>
-
-
-                        <article class="dashboard-card">
-
-                            <span class="dashboard-card-label">
-                                CLASSES
-                            </span>
-
-                            <div class="dashboard-stat">
-                                0
-                            </div>
-
-                            <p>
-                                Classes connectades
-                            </p>
-
-                        </article>
-
-
-                    </div>
-
-
-                    <section class="dashboard-welcome">
-
-                        <span class="eyebrow">
-                            PRIMER PAS
-                        </span>
-
-                        <h2>
-                            Configura el teu
-                            <span>espai educatiu.</span>
-                        </h2>
-
-                        <p>
-                            Quan el teu centre, professor o compte
-                            personal estigui configurat, aquí apareixeran
-                            les teves classes, activitats, calendari,
-                            tasques i progrés.
-                        </p>
-
-                    </section>
-
-                </div>
+                ></div>
 
             </section>
 
@@ -968,139 +1151,17 @@ function showDashboard(user) {
         dashboard
     );
 
-}
 
-
-// =========================================================
-// 13. REMOVE DASHBOARD
-// =========================================================
-
-function removeDashboard() {
-
-    const dashboard =
-        document.getElementById("dashboard");
-
-
-    if (dashboard) {
-
-        dashboard.remove();
-
-    }
-
-}
-
-
-// =========================================================
-// 14. DASHBOARD SECTIONS
-// =========================================================
-
-function dashboardSection(section) {
-
-    const view =
+    showDashboardHome(
         document.getElementById(
             "dashboard-view"
-        );
-
-
-    if (!view) {
-        return;
-    }
-
-
-    document
-        .querySelectorAll(
-            ".dashboard-nav-item"
         )
-        .forEach(button => {
-
-            button.classList.remove(
-                "active"
-            );
-
-        });
-
-
-    const buttons =
-        document.querySelectorAll(
-            ".dashboard-nav-item"
-        );
-
-
-    const sectionNames = [
-        "home",
-        "classes",
-        "tasks",
-        "calendar",
-        "ai",
-        "profile"
-    ];
-
-
-    const index =
-        sectionNames.indexOf(section);
-
-
-    if (index >= 0 && buttons[index]) {
-
-        buttons[index]
-            .classList.add("active");
-
-    }
-
-
-    if (section === "home") {
-
-        showDashboardHome(view);
-
-    }
-
-    else if (section === "classes") {
-
-        showDashboardPlaceholder(
-            view,
-            "Classes",
-            "Aquí apareixeran les teves classes i els centres als quals estàs connectat."
-        );
-
-    }
-
-    else if (section === "tasks") {
-
-        showDashboardPlaceholder(
-            view,
-            "Tasques",
-            "Aquí apareixeran activitats, deures i treballs pendents."
-        );
-
-    }
-
-    else if (section === "calendar") {
-
-        showDashboardPlaceholder(
-            view,
-            "Calendari",
-            "Aquí apareixeran classes, exàmens, reunions i activitats."
-        );
-
-    }
-
-    else if (section === "ai") {
-
-        showDashboardAI(view);
-
-    }
-
-    else if (section === "profile") {
-
-        showDashboardProfile(view);
-
-    }
-
+    );
 }
 
 
 // =========================================================
-// 15. DASHBOARD HOME
+// DASHBOARD HOME
 // =========================================================
 
 function showDashboardHome(view) {
@@ -1109,6 +1170,7 @@ function showDashboardHome(view) {
 
         <div class="dashboard-grid">
 
+
             <article class="dashboard-card dashboard-card-main">
 
                 <div class="dashboard-card-icon">
@@ -1116,7 +1178,7 @@ function showDashboardHome(view) {
                 </div>
 
                 <span class="dashboard-card-label">
-                    HORITZÓ D'APRENENTATGE
+                    HORIZON270.EDU
                 </span>
 
                 <h2>
@@ -1125,9 +1187,8 @@ function showDashboardHome(view) {
                 </h2>
 
                 <p>
-                    Horizon270.edu t'ajudarà a entendre
-                    què domines, què necessites reforçar
-                    i quin és el següent pas.
+                    Aquí començarà el teu espai personal
+                    d'aprenentatge, gestió i seguiment.
                 </p>
 
                 <button
@@ -1151,7 +1212,7 @@ function showDashboardHome(view) {
                 </div>
 
                 <p>
-                    Encara no hi ha dades d'aprenentatge.
+                    Encara no hi ha dades.
                 </p>
 
             </article>
@@ -1196,29 +1257,137 @@ function showDashboardHome(view) {
         <section class="dashboard-welcome">
 
             <span class="eyebrow">
-                PRIMER PAS
+                HORIZON270.EDU
             </span>
 
             <h2>
-                Configura el teu
-                <span>espai educatiu.</span>
+                El teu espai
+                <span>educatiu.</span>
             </h2>
 
             <p>
-                Quan el teu centre, professor o compte personal
-                estigui configurat, aquí apareixeran les teves
-                classes, activitats, calendari, tasques i progrés.
+                A mesura que connectem les diferents parts
+                de la plataforma, aquí apareixeran classes,
+                activitats, calendari, progrés i molt més.
             </p>
 
         </section>
 
     `;
-
 }
 
 
 // =========================================================
-// 16. DASHBOARD PLACEHOLDER
+// DASHBOARD SECTIONS
+// =========================================================
+
+function dashboardSection(section) {
+
+    const view =
+        document.getElementById(
+            "dashboard-view"
+        );
+
+
+    if (!view) return;
+
+
+    document
+        .querySelectorAll(
+            ".dashboard-nav-item"
+        )
+        .forEach(button => {
+
+            button.classList.remove(
+                "active"
+            );
+
+        });
+
+
+    const buttons =
+        document.querySelectorAll(
+            ".dashboard-nav-item"
+        );
+
+
+    const names = [
+        "home",
+        "classes",
+        "tasks",
+        "calendar",
+        "ai",
+        "profile"
+    ];
+
+
+    const index =
+        names.indexOf(section);
+
+
+    if (
+        index >= 0 &&
+        buttons[index]
+    ) {
+
+        buttons[index]
+            .classList.add("active");
+
+    }
+
+
+    if (section === "home") {
+
+        showDashboardHome(view);
+
+    }
+
+    else if (section === "classes") {
+
+        showDashboardPlaceholder(
+            view,
+            "Classes",
+            "Aquí apareixeran les classes i els espais educatius als quals estiguis connectat."
+        );
+
+    }
+
+    else if (section === "tasks") {
+
+        showDashboardPlaceholder(
+            view,
+            "Tasques",
+            "Aquí apareixeran activitats, deures, exercicis i treballs."
+        );
+
+    }
+
+    else if (section === "calendar") {
+
+        showDashboardPlaceholder(
+            view,
+            "Calendari",
+            "Aquí apareixeran classes, exàmens, reunions i activitats."
+        );
+
+    }
+
+    else if (section === "ai") {
+
+        showDashboardAI(view);
+
+    }
+
+    else if (section === "profile") {
+
+        showDashboardProfile(view);
+
+    }
+}
+
+
+// =========================================================
+// PLACEHOLDER
 // =========================================================
 
 function showDashboardPlaceholder(
@@ -1247,20 +1416,14 @@ function showDashboardPlaceholder(
                 ${escapeHTML(description)}
             </p>
 
-            <span class="dashboard-coming">
-                Aquesta àrea està preparada per a la
-                següent fase de Horizon270.edu.
-            </span>
-
         </section>
 
     `;
-
 }
 
 
 // =========================================================
-// 17. HORIZON AI AREA
+// HORIZON AI
 // =========================================================
 
 function showDashboardAI(view) {
@@ -1281,8 +1444,7 @@ function showDashboardAI(view) {
 
                 <p>
                     Una IA educativa orientada a ajudar-te
-                    a comprendre, no simplement a donar-te
-                    una resposta.
+                    a comprendre i aprendre.
                 </p>
 
             </div>
@@ -1312,6 +1474,7 @@ function showDashboardAI(view) {
 
                     </div>
 
+
                     <span class="ai-status">
                         ● Preparada
                     </span>
@@ -1330,8 +1493,8 @@ function showDashboardAI(view) {
                     </h3>
 
                     <p>
-                        Aquesta serà la interfície de la IA
-                        educativa de Horizon270.edu.
+                        La IA educativa s'integrarà
+                        aquí en la següent fase.
                     </p>
 
                 </div>
@@ -1359,12 +1522,11 @@ function showDashboardAI(view) {
         </section>
 
     `;
-
 }
 
 
 // =========================================================
-// 18. PROFILE
+// PROFILE
 // =========================================================
 
 async function showDashboardProfile(view) {
@@ -1373,11 +1535,13 @@ async function showDashboardProfile(view) {
         await getCurrentUser();
 
 
-    if (!user) {
+    if (!user) return;
 
-        return;
 
-    }
+    const profile =
+        await getProfile(
+            user.id
+        );
 
 
     const metadata =
@@ -1385,8 +1549,29 @@ async function showDashboardProfile(view) {
 
 
     const displayName =
+        profile?.display_name ||
         metadata.display_name ||
         "Usuari";
+
+
+    const labels = {
+
+        student: "Estudiant",
+
+        teacher: "Professor",
+
+        center: "Centre educatiu",
+
+        family: "Família",
+
+        professional: "Professional educatiu"
+
+    };
+
+
+    const type =
+        profile?.account_type ||
+        "student";
 
 
     view.innerHTML = `
@@ -1401,14 +1586,17 @@ async function showDashboardProfile(view) {
                 El teu <span>perfil.</span>
             </h2>
 
+
             <div class="profile-card">
 
                 <div class="profile-avatar">
+
                     ${escapeHTML(
                         displayName
                             .charAt(0)
                             .toUpperCase()
                     )}
+
                 </div>
 
 
@@ -1424,11 +1612,25 @@ async function showDashboardProfile(view) {
 
 
                     <span class="profile-label">
+                        TIPUS DE COMPTE
+                    </span>
+
+                    <strong>
+                        ${escapeHTML(
+                            labels[type] ||
+                            "Usuari"
+                        )}
+                    </strong>
+
+
+                    <span class="profile-label">
                         CORREU ELECTRÒNIC
                     </span>
 
                     <strong>
-                        ${escapeHTML(user.email || "")}
+                        ${escapeHTML(
+                            user.email || ""
+                        )}
                     </strong>
 
                 </div>
@@ -1438,12 +1640,11 @@ async function showDashboardProfile(view) {
         </section>
 
     `;
-
 }
 
 
 // =========================================================
-// 19. LOGOUT FROM UI
+// LOGOUT
 // =========================================================
 
 async function handleLogout() {
@@ -1459,7 +1660,6 @@ async function handleLogout() {
         );
 
         return;
-
     }
 
 
@@ -1468,12 +1668,62 @@ async function handleLogout() {
     showLanding();
 
     updateNavigation();
-
 }
 
 
 // =========================================================
-// 20. UPDATE NAVIGATION
+// REMOVE DASHBOARD
+// =========================================================
+
+function removeDashboard() {
+
+    const dashboard =
+        document.getElementById(
+            "dashboard"
+        );
+
+
+    if (dashboard) {
+
+        dashboard.remove();
+
+    }
+}
+
+
+// =========================================================
+// LANDING
+// =========================================================
+
+function showLanding() {
+
+    const main =
+        document.querySelector("main");
+
+    const footer =
+        document.querySelector("footer");
+
+
+    if (main) {
+
+        main.style.display = "";
+
+    }
+
+
+    if (footer) {
+
+        footer.style.display = "";
+
+    }
+
+
+    removeDashboard();
+}
+
+
+// =========================================================
+// NAVIGATION
 // =========================================================
 
 async function updateNavigation() {
@@ -1488,9 +1738,7 @@ async function updateNavigation() {
         );
 
 
-    if (!navActions) {
-        return;
-    }
+    if (!navActions) return;
 
 
     if (!user) {
@@ -1515,11 +1763,10 @@ async function updateNavigation() {
         `;
 
         return;
-
     }
 
 
-    const displayName =
+    const name =
         user.user_metadata?.display_name ||
         user.email?.split("@")[0] ||
         "Compte";
@@ -1528,7 +1775,7 @@ async function updateNavigation() {
     navActions.innerHTML = `
 
         <span class="user-email">
-            ${escapeHTML(displayName)}
+            ${escapeHTML(name)}
         </span>
 
 
@@ -1540,12 +1787,11 @@ async function updateNavigation() {
         </button>
 
     `;
-
 }
 
 
 // =========================================================
-// 21. OPEN DASHBOARD
+// OPEN DASHBOARD
 // =========================================================
 
 async function openDashboard() {
@@ -1559,46 +1805,44 @@ async function openDashboard() {
         showLogin();
 
         return;
-
     }
+
+
+    const profile =
+        await getProfile(
+            user.id
+        );
 
 
     closeModal();
 
-    showDashboard(user);
-
+    showDashboard(
+        user,
+        profile
+    );
 }
 
 
 // =========================================================
-// 22. AUTH STATE
+// AUTH STATE
 // =========================================================
 
 supabaseClient.auth.onAuthStateChange(
     (event, session) => {
 
         console.log(
-            "Auth event:",
+            "Auth:",
             event
         );
 
 
         if (session) {
 
-            console.log(
-                "Usuari connectat:",
-                session.user.email
-            );
-
             updateNavigation();
 
         }
 
         else {
-
-            console.log(
-                "Cap usuari connectat."
-            );
 
             removeDashboard();
 
@@ -1613,43 +1857,7 @@ supabaseClient.auth.onAuthStateChange(
 
 
 // =========================================================
-// 23. ESCAPE HTML
-// =========================================================
-
-function escapeHTML(value) {
-
-    return String(value)
-
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
-
-}
-
-
-// =========================================================
-// 24. SCROLL
+// SCROLL
 // =========================================================
 
 function scrollToSection(sectionId) {
@@ -1660,65 +1868,17 @@ function scrollToSection(sectionId) {
         );
 
 
-    if (!section) {
-        return;
-    }
+    if (!section) return;
 
 
     section.scrollIntoView({
         behavior: "smooth"
     });
-
 }
 
 
 // =========================================================
-// 25. TEST SUPABASE
-// =========================================================
-
-async function testSupabaseConnection() {
-
-    const {
-        data: { user },
-        error
-    } = await supabaseClient.auth.getUser();
-
-
-    if (error) {
-
-        console.error(
-            "Error connectant amb Supabase:",
-            error.message
-        );
-
-        return;
-
-    }
-
-
-    if (user) {
-
-        console.log(
-            "Supabase connectat.",
-            "Usuari:",
-            user.email
-        );
-
-    }
-
-    else {
-
-        console.log(
-            "Supabase connectat correctament."
-        );
-
-    }
-
-}
-
-
-// =========================================================
-// 26. INITIALIZATION
+// INIT
 // =========================================================
 
 document.addEventListener(
@@ -1730,9 +1890,6 @@ document.addEventListener(
         );
 
 
-        await testSupabaseConnection();
-
-
         const {
             data: { session }
         } =
@@ -1741,8 +1898,15 @@ document.addEventListener(
 
         if (session) {
 
+            const profile =
+                await getProfile(
+                    session.user.id
+                );
+
+
             showDashboard(
-                session.user
+                session.user,
+                profile
             );
 
         }
