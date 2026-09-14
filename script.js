@@ -2625,3 +2625,281 @@ document.addEventListener(
 
     }
 );
+// =========================================================
+// PERFIL — ACTUALITZAR NOM
+// =========================================================
+
+async function updateProfileName(newName) {
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+        return {
+            success: false,
+            error: "No hi ha cap sessió activa."
+        };
+    }
+
+    const name = newName.trim();
+
+    if (!name) {
+        return {
+            success: false,
+            error: "El nom no pot estar buit."
+        };
+    }
+
+    const { data, error } =
+        await supabaseClient
+            .from("profiles")
+            .update({
+                display_name: name
+            })
+            .eq("id", user.id)
+            .select()
+            .single();
+
+    if (error) {
+
+        console.error(
+            "Error actualitzant el nom:",
+            error.message
+        );
+
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+
+    return {
+        success: true,
+        data
+    };
+}
+
+
+// =========================================================
+// PERFIL — PUJAR FOTO
+// =========================================================
+
+async function uploadProfilePhoto(file) {
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+        return {
+            success: false,
+            error: "No hi ha cap sessió activa."
+        };
+    }
+
+    if (!file) {
+        return {
+            success: false,
+            error: "No s'ha seleccionat cap imatge."
+        };
+    }
+
+
+    // Tipus permesos
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+
+        return {
+            success: false,
+            error: "Només es permeten imatges JPG, PNG o WEBP."
+        };
+    }
+
+
+    // Màxim 5 MB
+    if (file.size > 5 * 1024 * 1024) {
+
+        return {
+            success: false,
+            error: "La imatge no pot superar els 5 MB."
+        };
+    }
+
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+
+    const filePath =
+        `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+
+    const { error: uploadError } =
+        await supabaseClient
+            .storage
+            .from("profile-photos")
+            .upload(
+                filePath,
+                file,
+                {
+                    cacheControl: "3600",
+                    upsert: false,
+                    contentType: file.type
+                }
+            );
+
+
+    if (uploadError) {
+
+        console.error(
+            "Error pujant foto:",
+            uploadError.message
+        );
+
+        return {
+            success: false,
+            error: uploadError.message
+        };
+    }
+
+
+    const {
+        data: publicUrlData
+    } =
+        supabaseClient
+            .storage
+            .from("profile-photos")
+            .getPublicUrl(filePath);
+
+
+    const avatarUrl =
+        publicUrlData.publicUrl;
+
+
+    const { error: profileError } =
+        await supabaseClient
+            .from("profiles")
+            .update({
+                avatar_url: avatarUrl
+            })
+            .eq("id", user.id);
+
+
+    if (profileError) {
+
+        console.error(
+            "Error guardant avatar:",
+            profileError.message
+        );
+
+        return {
+            success: false,
+            error: profileError.message
+        };
+    }
+
+
+    return {
+        success: true,
+        url: avatarUrl,
+        path: filePath
+    };
+}
+
+
+// =========================================================
+// PERFIL — ELIMINAR FOTO
+// =========================================================
+
+async function removeProfilePhoto() {
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+        return {
+            success: false,
+            error: "No hi ha cap sessió activa."
+        };
+    }
+
+
+    const profile =
+        await getProfile(user.id);
+
+
+    if (!profile?.avatar_url) {
+
+        return {
+            success: true
+        };
+    }
+
+
+    // Intentar obtenir el path de la nostra foto
+    const marker =
+        "/storage/v1/object/public/profile-photos/";
+
+    const index =
+        profile.avatar_url.indexOf(marker);
+
+
+    if (index !== -1) {
+
+        const filePath =
+            profile.avatar_url
+                .substring(
+                    index + marker.length
+                );
+
+
+        const { error } =
+            await supabaseClient
+                .storage
+                .from("profile-photos")
+                .remove([
+                    filePath
+                ]);
+
+
+        if (error) {
+
+            console.error(
+                "Error eliminant foto:",
+                error.message
+            );
+
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+
+    const { error: profileError } =
+        await supabaseClient
+            .from("profiles")
+            .update({
+                avatar_url: null
+            })
+            .eq("id", user.id);
+
+
+    if (profileError) {
+
+        return {
+            success: false,
+            error: profileError.message
+        };
+    }
+
+
+    return {
+        success: true
+    };
+}
