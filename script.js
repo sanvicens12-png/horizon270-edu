@@ -1,7 +1,6 @@
 // =========================================================
 // HORIZON270.EDU
 // Supabase + Authentication + Profiles + Dashboard
-// + Edició de perfil + Foto de perfil
 // =========================================================
 
 
@@ -15,13 +14,12 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_mU_871SdiMJgSA1LHCLEAg_my7qG2oq";
 
+
 const supabaseClient =
     window.supabase.createClient(
         SUPABASE_URL,
         SUPABASE_PUBLISHABLE_KEY
     );
-
-const AVATAR_BUCKET = "avatars";
 
 
 // =========================================================
@@ -36,6 +34,7 @@ function escapeHTML(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+
 }
 
 
@@ -50,15 +49,7 @@ function showMessage(message, type = "") {
         "auth-message " + type;
 
     element.textContent = message;
-}
 
-
-function getInitial(name) {
-
-    return String(name || "U")
-        .trim()
-        .charAt(0)
-        .toUpperCase();
 }
 
 
@@ -79,9 +70,11 @@ async function registerUser(
             password,
 
             options: {
+
                 data: {
                     display_name: displayName
                 }
+
             }
 
         });
@@ -98,6 +91,7 @@ async function registerUser(
             success: false,
             error: error.message
         };
+
     }
 
 
@@ -105,6 +99,7 @@ async function registerUser(
         success: true,
         data
     };
+
 }
 
 
@@ -137,6 +132,7 @@ async function loginUser(
             success: false,
             error: error.message
         };
+
     }
 
 
@@ -144,6 +140,7 @@ async function loginUser(
         success: true,
         data
     };
+
 }
 
 
@@ -165,10 +162,12 @@ async function logoutUser() {
         );
 
         return false;
+
     }
 
 
     return true;
+
 }
 
 
@@ -181,26 +180,29 @@ async function getCurrentUser() {
     const {
         data: { user },
         error
-    } = await supabaseClient.auth.getUser();
+    } =
+        await supabaseClient.auth.getUser();
 
 
     if (error) {
 
         console.error(
-            "Error obtenint l'usuari:",
+            "Error obtenint usuari:",
             error.message
         );
 
         return null;
+
     }
 
 
     return user;
+
 }
 
 
 // =========================================================
-// 7. PERFIL — CREAR
+// 7. CREAR PERFIL
 // =========================================================
 
 async function createProfile(
@@ -238,6 +240,7 @@ async function createProfile(
             success: false,
             error: error.message
         };
+
     }
 
 
@@ -245,11 +248,12 @@ async function createProfile(
         success: true,
         data
     };
+
 }
 
 
 // =========================================================
-// 8. PERFIL — OBTENIR
+// 8. OBTENIR PERFIL
 // =========================================================
 
 async function getProfile(userId) {
@@ -270,98 +274,126 @@ async function getProfile(userId) {
         );
 
         return null;
+
     }
 
 
     return data;
+
 }
 
 
 // =========================================================
-// 9. PERFIL — ACTUALITZAR NOM
+// 9. ACTUALITZAR PERFIL
 // =========================================================
 
-async function updateProfileName(
+async function updateProfile(
     userId,
-    displayName
+    displayName,
+    email
 ) {
 
-    const { data, error } =
-        await supabaseClient
-            .from("profiles")
-            .update({
-                display_name: displayName
-            })
-            .eq("id", userId)
-            .select()
-            .single();
+    try {
+
+        // -----------------------------------------
+        // Actualitzar AUTH
+        // -----------------------------------------
+
+        const { data: authData, error: authError } =
+            await supabaseClient.auth.updateUser({
+
+                email: email,
+
+                data: {
+                    display_name: displayName
+                }
+
+            });
 
 
-    if (error) {
+        if (authError) {
+
+            console.error(
+                "Error actualitzant Auth:",
+                authError.message
+            );
+
+            return {
+                success: false,
+                error: authError.message
+            };
+
+        }
+
+
+        // -----------------------------------------
+        // Actualitzar PROFILE
+        // -----------------------------------------
+
+        const { data: profileData, error: profileError } =
+            await supabaseClient
+                .from("profiles")
+                .update({
+
+                    display_name: displayName
+
+                })
+                .eq("id", userId)
+                .select()
+                .single();
+
+
+        if (profileError) {
+
+            console.error(
+                "Error actualitzant profile:",
+                profileError.message
+            );
+
+            return {
+                success: false,
+                error: profileError.message
+            };
+
+        }
+
+
+        return {
+
+            success: true,
+
+            authData,
+
+            profileData
+
+        };
+
+    }
+
+    catch (error) {
 
         console.error(
-            "Error actualitzant perfil:",
-            error.message
+            "Error inesperat:",
+            error
         );
 
         return {
+
             success: false,
-            error: error.message
+
+            error:
+                error.message ||
+                "Error inesperat."
+
         };
+
     }
 
-
-    return {
-        success: true,
-        data
-    };
 }
 
 
 // =========================================================
-// 10. FOTO — RUTA
-// =========================================================
-
-function getAvatarPath(userId) {
-
-    return `${userId}/avatar`;
-}
-
-
-// =========================================================
-// 11. FOTO — OBTENIR URL SIGNADA
-// =========================================================
-
-async function getAvatarUrl(userId) {
-
-    if (!userId) return null;
-
-
-    const path =
-        getAvatarPath(userId);
-
-
-    const { data, error } =
-        await supabaseClient.storage
-            .from(AVATAR_BUCKET)
-            .createSignedUrl(
-                path,
-                60 * 60 * 24 * 365
-            );
-
-
-    if (error) {
-
-        return null;
-    }
-
-
-    return data?.signedUrl || null;
-}
-
-
-// =========================================================
-// 12. FOTO — PUJAR
+// 10. FOTO DE PERFIL
 // =========================================================
 
 async function uploadAvatar(
@@ -369,145 +401,167 @@ async function uploadAvatar(
     file
 ) {
 
-    if (!userId) {
-
-        return {
-            success: false,
-            error: "No hi ha cap usuari connectat."
-        };
-    }
-
-
     if (!file) {
 
         return {
             success: false,
             error: "No s'ha seleccionat cap imatge."
         };
+
     }
 
 
-    // ---------------------------------------------
-    // Comprovar tipus
-    // ---------------------------------------------
+    // -----------------------------------------
+    // Validacions
+    // -----------------------------------------
 
-    if (!file.type.startsWith("image/")) {
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+
+    if (!allowedTypes.includes(file.type)) {
 
         return {
+
             success: false,
-            error: "El fitxer seleccionat no és una imatge."
+
+            error:
+                "Format no compatible. Utilitza JPG, PNG o WebP."
+
         };
+
     }
 
 
-    // ---------------------------------------------
-    // Mida màxima: 5 MB
-    // ---------------------------------------------
-
-    const maxSize =
-        5 * 1024 * 1024;
-
-
-    if (file.size > maxSize) {
+    if (file.size > 5 * 1024 * 1024) {
 
         return {
+
             success: false,
-            error: "La imatge no pot superar els 5 MB."
+
+            error:
+                "La imatge no pot superar els 5 MB."
+
         };
+
     }
 
 
-    const path =
-        getAvatarPath(userId);
+    // -----------------------------------------
+    // Nom del fitxer
+    // -----------------------------------------
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
 
 
-    // ---------------------------------------------
-    // Pujar / substituir
-    // ---------------------------------------------
+    const filePath =
+        `${userId}/avatar.${extension}`;
 
-    const { error } =
+
+    // -----------------------------------------
+    // Pujar a Storage
+    // -----------------------------------------
+
+    const { error: uploadError } =
         await supabaseClient.storage
-            .from(AVATAR_BUCKET)
+            .from("avatars")
             .upload(
-                path,
+                filePath,
                 file,
                 {
-                    cacheControl: "3600",
                     upsert: true,
                     contentType: file.type
                 }
             );
 
 
-    if (error) {
+    if (uploadError) {
 
         console.error(
             "Error pujant avatar:",
-            error.message
+            uploadError.message
         );
 
         return {
+
             success: false,
-            error: error.message
+
+            error:
+                uploadError.message
+
         };
+
     }
 
 
-    return {
-        success: true
-    };
-}
+    // -----------------------------------------
+    // URL pública
+    // -----------------------------------------
+
+    const { data } =
+        supabaseClient.storage
+            .from("avatars")
+            .getPublicUrl(filePath);
 
 
-// =========================================================
-// 13. FOTO — ELIMINAR
-// =========================================================
-
-async function deleteAvatar(userId) {
-
-    if (!userId) {
-
-        return {
-            success: false,
-            error: "No hi ha cap usuari connectat."
-        };
-    }
+    const avatarUrl =
+        data.publicUrl;
 
 
-    const path =
-        getAvatarPath(userId);
+    // -----------------------------------------
+    // Guardar URL al perfil
+    // -----------------------------------------
+
+    const { error: profileError } =
+        await supabaseClient
+            .from("profiles")
+            .update({
+
+                avatar_url: avatarUrl
+
+            })
+            .eq("id", userId);
 
 
-    const { error } =
-        await supabaseClient.storage
-            .from(AVATAR_BUCKET)
-            .remove([
-                path
-            ]);
-
-
-    if (error) {
+    if (profileError) {
 
         console.error(
-            "Error eliminant avatar:",
-            error.message
+            "Error guardant avatar:",
+            profileError.message
         );
 
         return {
+
             success: false,
-            error: error.message
+
+            error:
+                profileError.message
+
         };
+
     }
 
 
     return {
-        success: true
+
+        success: true,
+
+        avatarUrl
+
     };
+
 }
 
 
 // =========================================================
-// 14. LOGIN MODAL
+// 11. LOGIN MODAL
 // =========================================================
 
 function showLogin() {
@@ -517,9 +571,6 @@ function showLogin() {
 
     const content =
         document.getElementById("modalContent");
-
-
-    if (!modal || !content) return;
 
 
     content.innerHTML = `
@@ -618,11 +669,12 @@ function showLogin() {
             "submit",
             handleLogin
         );
+
 }
 
 
 // =========================================================
-// 15. REGISTRE — PAS 1
+// 12. REGISTRE — PAS 1
 // =========================================================
 
 function showSignup() {
@@ -632,9 +684,6 @@ function showSignup() {
 
     const content =
         document.getElementById("modalContent");
-
-
-    if (!modal || !content) return;
 
 
     content.innerHTML = `
@@ -655,6 +704,7 @@ function showSignup() {
 
 
             <div class="account-type-grid">
+
 
                 <button
                     type="button"
@@ -693,8 +743,7 @@ function showSignup() {
                     </strong>
 
                     <small>
-                        Gestiona el teu espai educatiu
-                        encara que el teu centre no hi participi.
+                        Gestiona el teu espai educatiu.
                     </small>
 
                 </button>
@@ -765,6 +814,7 @@ function showSignup() {
 
                 </button>
 
+
             </div>
 
 
@@ -793,16 +843,15 @@ function showSignup() {
 
 
     modal.classList.remove("hidden");
+
 }
 
 
 // =========================================================
-// 16. REGISTRE — PAS 2
+// 13. REGISTRE — PAS 2
 // =========================================================
 
-function selectAccountType(
-    accountType
-) {
+function selectAccountType(accountType) {
 
     const labels = {
 
@@ -825,16 +874,13 @@ function selectAccountType(
         );
 
 
-    if (!modalContent) return;
-
-
     modalContent.innerHTML = `
 
         <div class="auth-container">
 
             <span class="eyebrow">
                 ${escapeHTML(
-                    labels[accountType] || "HORIZON270.EDU"
+                    labels[accountType]
                 )}
             </span>
 
@@ -930,7 +976,7 @@ function selectAccountType(
                 class="back-button"
                 onclick="showSignup()"
             >
-                ← Tornar a seleccionar tipus
+                ← Tornar
             </button>
 
         </div>
@@ -944,11 +990,12 @@ function selectAccountType(
             "submit",
             handleSignup
         );
+
 }
 
 
 // =========================================================
-// 17. HANDLE SIGNUP
+// 14. HANDLE SIGNUP
 // =========================================================
 
 async function handleSignup(event) {
@@ -990,6 +1037,7 @@ async function handleSignup(event) {
         );
 
         return;
+
     }
 
 
@@ -1001,6 +1049,7 @@ async function handleSignup(event) {
         );
 
         return;
+
     }
 
 
@@ -1026,6 +1075,7 @@ async function handleSignup(event) {
         );
 
         return;
+
     }
 
 
@@ -1040,17 +1090,19 @@ async function handleSignup(event) {
         );
 
         return;
+
     }
 
 
     if (!result.data.session) {
 
         showMessage(
-            "El compte s'ha creat, però encara no hi ha una sessió activa.",
+            "El compte s'ha creat, però no hi ha una sessió activa.",
             "error"
         );
 
         return;
+
     }
 
 
@@ -1071,6 +1123,7 @@ async function handleSignup(event) {
         );
 
         return;
+
     }
 
 
@@ -1088,12 +1141,15 @@ async function handleSignup(event) {
             profileResult.data
         );
 
+        updateNavigation();
+
     }, 400);
+
 }
 
 
 // =========================================================
-// 18. HANDLE LOGIN
+// 15. HANDLE LOGIN
 // =========================================================
 
 async function handleLogin(event) {
@@ -1135,6 +1191,7 @@ async function handleLogin(event) {
         );
 
         return;
+
     }
 
 
@@ -1144,26 +1201,21 @@ async function handleLogin(event) {
         );
 
 
-    showMessage(
-        "Sessió iniciada. Entrant..."
+    closeModal();
+
+    showDashboard(
+        result.data.user,
+        profile
     );
 
 
-    setTimeout(() => {
+    updateNavigation();
 
-        closeModal();
-
-        showDashboard(
-            result.data.user,
-            profile
-        );
-
-    }, 400);
 }
 
 
 // =========================================================
-// 19. MODAL
+// 16. MODAL
 // =========================================================
 
 function closeModal() {
@@ -1177,14 +1229,15 @@ function closeModal() {
         modal.classList.add("hidden");
 
     }
+
 }
 
 
 // =========================================================
-// 20. DASHBOARD
+// 17. DASHBOARD
 // =========================================================
 
-async function showDashboard(
+function showDashboard(
     user,
     profile = null
 ) {
@@ -1194,6 +1247,9 @@ async function showDashboard(
 
     const footer =
         document.querySelector("footer");
+
+    const publicNav =
+        document.querySelector("header.navbar nav");
 
 
     if (!main) return;
@@ -1205,6 +1261,17 @@ async function showDashboard(
     if (footer) {
 
         footer.style.display = "none";
+
+    }
+
+
+    // -----------------------------------------------------
+    // AMAGAR FUNCIONS / IA / COMUNITAT
+    // -----------------------------------------------------
+
+    if (publicNav) {
+
+        publicNav.style.display = "none";
 
     }
 
@@ -1241,7 +1308,8 @@ async function showDashboard(
 
 
     const avatarUrl =
-        await getAvatarUrl(user.id);
+        profile?.avatar_url ||
+        "";
 
 
     const accountLabels = {
@@ -1257,6 +1325,25 @@ async function showDashboard(
         professional: "Professional educatiu"
 
     };
+
+
+    const avatarHTML = avatarUrl
+
+        ? `
+            <img
+                src="${escapeHTML(avatarUrl)}"
+                alt="Foto de perfil"
+                class="avatar-image"
+            >
+          `
+
+        : `
+            ${escapeHTML(
+                displayName
+                    .charAt(0)
+                    .toUpperCase()
+            )}
+          `;
 
 
     dashboard.innerHTML = `
@@ -1381,21 +1468,19 @@ async function showDashboard(
                     </div>
 
 
-                    <div class="dashboard-profile">
+                    <button
+                        class="dashboard-profile"
+                        onclick="dashboardSection('profile')"
+                        title="Obrir perfil"
+                    >
 
                         <div class="avatar">
 
-                            ${
-                                avatarUrl
-                                    ? `<img src="${escapeHTML(avatarUrl)}" alt="Foto de perfil">`
-                                    : escapeHTML(
-                                        getInitial(displayName)
-                                    )
-                            }
+                            ${avatarHTML}
 
                         </div>
 
-                    </div>
+                    </button>
 
                 </header>
 
@@ -1422,17 +1507,15 @@ async function showDashboard(
             "dashboard-view"
         )
     );
+
 }
 
 
 // =========================================================
-// 21. DASHBOARD HOME
+// 18. DASHBOARD HOME
 // =========================================================
 
 function showDashboardHome(view) {
-
-    if (!view) return;
-
 
     view.innerHTML = `
 
@@ -1542,11 +1625,12 @@ function showDashboardHome(view) {
         </section>
 
     `;
+
 }
 
 
 // =========================================================
-// 22. DASHBOARD SECTIONS
+// 19. DASHBOARD SECTIONS
 // =========================================================
 
 function dashboardSection(section) {
@@ -1651,11 +1735,12 @@ function dashboardSection(section) {
         showDashboardProfile(view);
 
     }
+
 }
 
 
 // =========================================================
-// 23. PLACEHOLDER
+// 20. PLACEHOLDER
 // =========================================================
 
 function showDashboardPlaceholder(
@@ -1687,11 +1772,12 @@ function showDashboardPlaceholder(
         </section>
 
     `;
+
 }
 
 
 // =========================================================
-// 24. HORIZON AI
+// 21. HORIZON AI
 // =========================================================
 
 function showDashboardAI(view) {
@@ -1790,17 +1876,15 @@ function showDashboardAI(view) {
         </section>
 
     `;
+
 }
 
 
 // =========================================================
-// 25. PERFIL
+// 22. PERFIL
 // =========================================================
 
 async function showDashboardProfile(view) {
-
-    if (!view) return;
-
 
     const user =
         await getCurrentUser();
@@ -1822,7 +1906,6 @@ async function showDashboardProfile(view) {
     const displayName =
         profile?.display_name ||
         metadata.display_name ||
-        user.email?.split("@")[0] ||
         "Usuari";
 
 
@@ -1847,7 +1930,27 @@ async function showDashboardProfile(view) {
 
 
     const avatarUrl =
-        await getAvatarUrl(user.id);
+        profile?.avatar_url ||
+        "";
+
+
+    const avatarHTML = avatarUrl
+
+        ? `
+            <img
+                src="${escapeHTML(avatarUrl)}"
+                alt="Foto de perfil"
+                class="profile-avatar-image"
+            >
+          `
+
+        : `
+            ${escapeHTML(
+                displayName
+                    .charAt(0)
+                    .toUpperCase()
+            )}
+          `;
 
 
     view.innerHTML = `
@@ -1865,61 +1968,9 @@ async function showDashboardProfile(view) {
 
             <div class="profile-card">
 
-                <div class="profile-avatar-wrapper">
+                <div class="profile-avatar">
 
-                    <div class="profile-avatar">
-
-                        ${
-                            avatarUrl
-                                ? `<img
-                                    src="${escapeHTML(avatarUrl)}"
-                                    alt="Foto de perfil"
-                                  >`
-                                : escapeHTML(
-                                    getInitial(displayName)
-                                )
-                        }
-
-                    </div>
-
-
-                    <div class="profile-photo-actions">
-
-                        <label
-                            for="avatarInput"
-                            class="btn secondary"
-                        >
-                            Canviar foto
-                        </label>
-
-                        <input
-                            id="avatarInput"
-                            type="file"
-                            accept="image/*"
-                            hidden
-                        >
-
-
-                        ${
-                            avatarUrl
-                                ? `
-                                    <button
-                                        type="button"
-                                        class="btn secondary"
-                                        id="deleteAvatarButton"
-                                    >
-                                        Eliminar foto
-                                    </button>
-                                  `
-                                : ""
-                        }
-
-                    </div>
-
-
-                    <small class="profile-photo-help">
-                        JPG, PNG o WEBP · màxim 5 MB
-                    </small>
+                    ${avatarHTML}
 
                 </div>
 
@@ -1930,26 +1981,9 @@ async function showDashboardProfile(view) {
                         NOM
                     </span>
 
-
-                    <div class="profile-edit-row">
-
-                        <input
-                            id="profileNameInput"
-                            type="text"
-                            maxlength="80"
-                            value="${escapeHTML(displayName)}"
-                        >
-
-
-                        <button
-                            type="button"
-                            class="btn primary"
-                            id="saveProfileName"
-                        >
-                            Desar
-                        </button>
-
-                    </div>
+                    <strong>
+                        ${escapeHTML(displayName)}
+                    </strong>
 
 
                     <span class="profile-label">
@@ -1974,13 +2008,101 @@ async function showDashboardProfile(view) {
                         )}
                     </strong>
 
+                </div>
+
+            </div>
+
+
+            <div class="profile-edit-card">
+
+                <div class="profile-edit-header">
+
+                    <span class="eyebrow">
+                        CONFIGURACIÓ
+                    </span>
+
+                    <h3>
+                        Editar perfil
+                    </h3>
+
+                    <p>
+                        Actualitza les teves dades personals.
+                    </p>
+
+                </div>
+
+
+                <form
+                    id="profileEditForm"
+                    class="profile-edit-form"
+                >
+
+                    <div class="auth-field">
+
+                        <label for="profileName">
+                            Nom
+                        </label>
+
+                        <input
+                            id="profileName"
+                            type="text"
+                            value="${escapeHTML(displayName)}"
+                            maxlength="80"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="auth-field">
+
+                        <label for="profileEmail">
+                            Correu electrònic
+                        </label>
+
+                        <input
+                            id="profileEmail"
+                            type="email"
+                            value="${escapeHTML(user.email || "")}"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="auth-field">
+
+                        <label for="profileAvatar">
+                            Foto de perfil
+                        </label>
+
+                        <input
+                            id="profileAvatar"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                        >
+
+                        <small>
+                            JPG, PNG o WebP · màxim 5 MB
+                        </small>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="btn primary"
+                    >
+                        Guardar canvis
+                    </button>
+
 
                     <div
                         id="profileMessage"
-                        class="profile-message"
+                        class="auth-message"
                     ></div>
 
-                </div>
+                </form>
 
             </div>
 
@@ -1989,379 +2111,220 @@ async function showDashboardProfile(view) {
     `;
 
 
-    // =====================================================
-    // CANVI DE NOM
-    // =====================================================
-
-    const saveButton =
-        document.getElementById(
-            "saveProfileName"
+    document
+        .getElementById("profileEditForm")
+        .addEventListener(
+            "submit",
+            handleProfileUpdate
         );
-
-
-    if (saveButton) {
-
-        saveButton.addEventListener(
-            "click",
-            async () => {
-
-                const input =
-                    document.getElementById(
-                        "profileNameInput"
-                    );
-
-
-                const newName =
-                    input.value.trim();
-
-
-                const message =
-                    document.getElementById(
-                        "profileMessage"
-                    );
-
-
-                if (!newName) {
-
-                    if (message) {
-
-                        message.className =
-                            "profile-message error";
-
-                        message.textContent =
-                            "El nom no pot estar buit.";
-
-                    }
-
-                    return;
-                }
-
-
-                saveButton.disabled = true;
-
-                saveButton.textContent =
-                    "Desant...";
-
-
-                const result =
-                    await updateProfileName(
-                        user.id,
-                        newName
-                    );
-
-
-                if (!result.success) {
-
-                    if (message) {
-
-                        message.className =
-                            "profile-message error";
-
-                        message.textContent =
-                            "No s'han pogut guardar els canvis: " +
-                            result.error;
-
-                    }
-
-                    saveButton.disabled = false;
-
-                    saveButton.textContent =
-                        "Desar";
-
-                    return;
-                }
-
-
-                // També actualitzem metadata
-                // per mantenir el nom sincronitzat.
-
-                await supabaseClient.auth.updateUser({
-
-                    data: {
-                        display_name: newName
-                    }
-
-                });
-
-
-                if (message) {
-
-                    message.className =
-                        "profile-message success";
-
-                    message.textContent =
-                        "Canvis guardats correctament.";
-
-                }
-
-
-                saveButton.disabled = false;
-
-                saveButton.textContent =
-                    "Desat ✓";
-
-
-                // Actualitzar avatar/header
-                // sense sortir del perfil.
-
-                const dashboardAvatar =
-                    document.querySelector(
-                        ".dashboard-header .avatar"
-                    );
-
-
-                if (
-                    dashboardAvatar &&
-                    !avatarUrl
-                ) {
-
-                    dashboardAvatar.textContent =
-                        getInitial(newName);
-
-                }
-
-            }
-        );
-
-    }
-
-
-    // =====================================================
-    // PUJAR FOTO
-    // =====================================================
-
-    const avatarInput =
-        document.getElementById(
-            "avatarInput"
-        );
-
-
-    if (avatarInput) {
-
-        avatarInput.addEventListener(
-            "change",
-            async () => {
-
-                const file =
-                    avatarInput.files?.[0];
-
-
-                if (!file) return;
-
-
-                const message =
-                    document.getElementById(
-                        "profileMessage"
-                    );
-
-
-                if (message) {
-
-                    message.className =
-                        "profile-message";
-
-                    message.textContent =
-                        "Pujant la foto...";
-
-                }
-
-
-                avatarInput.disabled =
-                    true;
-
-
-                const result =
-                    await uploadAvatar(
-                        user.id,
-                        file
-                    );
-
-
-                if (!result.success) {
-
-                    if (message) {
-
-                        message.className =
-                            "profile-message error";
-
-                        message.textContent =
-                            "No s'ha pogut pujar la foto: " +
-                            result.error;
-
-                    }
-
-                    avatarInput.disabled =
-                        false;
-
-                    avatarInput.value = "";
-
-                    return;
-                }
-
-
-                if (message) {
-
-                    message.className =
-                        "profile-message success";
-
-                    message.textContent =
-                        "Foto actualitzada correctament.";
-
-                }
-
-
-                avatarInput.disabled =
-                    false;
-
-                avatarInput.value = "";
-
-
-                // Tornar a carregar el perfil
-                // amb la nova fotografia.
-
-                await showDashboardProfile(
-                    view
-                );
-
-
-                // Actualitzar també l'avatar
-                // de la capçalera.
-
-                const newAvatarUrl =
-                    await getAvatarUrl(
-                        user.id
-                    );
-
-
-                const dashboardAvatar =
-                    document.querySelector(
-                        ".dashboard-header .avatar"
-                    );
-
-
-                if (
-                    dashboardAvatar &&
-                    newAvatarUrl
-                ) {
-
-                    dashboardAvatar.innerHTML =
-                        `<img
-                            src="${escapeHTML(newAvatarUrl)}"
-                            alt="Foto de perfil"
-                        >`;
-
-                }
-
-            }
-        );
-
-    }
-
-
-    // =====================================================
-    // ELIMINAR FOTO
-    // =====================================================
-
-    const deleteAvatarButton =
-        document.getElementById(
-            "deleteAvatarButton"
-        );
-
-
-    if (deleteAvatarButton) {
-
-        deleteAvatarButton.addEventListener(
-            "click",
-            async () => {
-
-                const message =
-                    document.getElementById(
-                        "profileMessage"
-                    );
-
-
-                deleteAvatarButton.disabled =
-                    true;
-
-
-                deleteAvatarButton.textContent =
-                    "Eliminant...";
-
-
-                const result =
-                    await deleteAvatar(
-                        user.id
-                    );
-
-
-                if (!result.success) {
-
-                    if (message) {
-
-                        message.className =
-                            "profile-message error";
-
-                        message.textContent =
-                            "No s'ha pogut eliminar la foto: " +
-                            result.error;
-
-                    }
-
-                    deleteAvatarButton.disabled =
-                        false;
-
-                    deleteAvatarButton.textContent =
-                        "Eliminar foto";
-
-                    return;
-                }
-
-
-                if (message) {
-
-                    message.className =
-                        "profile-message success";
-
-                    message.textContent =
-                        "Foto eliminada correctament.";
-
-                }
-
-
-                // Actualitzar tota la vista.
-
-                await showDashboardProfile(
-                    view
-                );
-
-
-                // Actualitzar avatar del header.
-
-                const dashboardAvatar =
-                    document.querySelector(
-                        ".dashboard-header .avatar"
-                    );
-
-
-                if (dashboardAvatar) {
-
-                    dashboardAvatar.innerHTML =
-                        escapeHTML(
-                            getInitial(displayName)
-                        );
-
-                }
-
-            }
-        );
-
-    }
 
 }
 
 
 // =========================================================
-// 26. LOGOUT
+// 23. GUARDAR PERFIL
+// =========================================================
+
+async function handleProfileUpdate(event) {
+
+    event.preventDefault();
+
+
+    const user =
+        await getCurrentUser();
+
+
+    if (!user) {
+
+        return;
+
+    }
+
+
+    const name =
+        document
+            .getElementById("profileName")
+            .value
+            .trim();
+
+
+    const email =
+        document
+            .getElementById("profileEmail")
+            .value
+            .trim();
+
+
+    const fileInput =
+        document.getElementById(
+            "profileAvatar"
+        );
+
+
+    const file =
+        fileInput?.files?.[0] || null;
+
+
+    const message =
+        document.getElementById(
+            "profileMessage"
+        );
+
+
+    if (!name) {
+
+        message.className =
+            "auth-message error";
+
+        message.textContent =
+            "El nom no pot estar buit.";
+
+        return;
+
+    }
+
+
+    if (!email) {
+
+        message.className =
+            "auth-message error";
+
+        message.textContent =
+            "Escriu un correu electrònic.";
+
+        return;
+
+    }
+
+
+    message.className =
+        "auth-message";
+
+    message.textContent =
+        "Guardant canvis...";
+
+
+    // -----------------------------------------------------
+    // Actualitzar nom + email
+    // -----------------------------------------------------
+
+    const result =
+        await updateProfile(
+            user.id,
+            name,
+            email
+        );
+
+
+    if (!result.success) {
+
+        message.className =
+            "auth-message error";
+
+        message.textContent =
+            "No s'han pogut guardar els canvis: " +
+            result.error;
+
+        return;
+
+    }
+
+
+    // -----------------------------------------------------
+    // Actualitzar foto
+    // -----------------------------------------------------
+
+    if (file) {
+
+        message.textContent =
+            "Pujant la foto de perfil...";
+
+
+        const avatarResult =
+            await uploadAvatar(
+                user.id,
+                file
+            );
+
+
+        if (!avatarResult.success) {
+
+            message.className =
+                "auth-message error";
+
+            message.textContent =
+                "Dades guardades, però no s'ha pogut pujar la foto: " +
+                avatarResult.error;
+
+            await refreshDashboard();
+
+            return;
+
+        }
+
+    }
+
+
+    message.className =
+        "auth-message success";
+
+    message.textContent =
+        "Canvis guardats correctament.";
+
+
+    setTimeout(
+        async () => {
+
+            await refreshDashboard();
+
+        },
+        700
+    );
+
+}
+
+
+// =========================================================
+// 24. REFRESH DASHBOARD
+// =========================================================
+
+async function refreshDashboard() {
+
+    const user =
+        await getCurrentUser();
+
+
+    if (!user) {
+
+        showLanding();
+
+        return;
+
+    }
+
+
+    const profile =
+        await getProfile(
+            user.id
+        );
+
+
+    removeDashboard();
+
+
+    showDashboard(
+        user,
+        profile
+    );
+
+
+    updateNavigation();
+
+}
+
+
+// =========================================================
+// 25. LOGOUT
 // =========================================================
 
 async function handleLogout() {
@@ -2377,6 +2340,7 @@ async function handleLogout() {
         );
 
         return;
+
     }
 
 
@@ -2385,11 +2349,12 @@ async function handleLogout() {
     showLanding();
 
     updateNavigation();
+
 }
 
 
 // =========================================================
-// 27. REMOVE DASHBOARD
+// 26. REMOVE DASHBOARD
 // =========================================================
 
 function removeDashboard() {
@@ -2405,11 +2370,12 @@ function removeDashboard() {
         dashboard.remove();
 
     }
+
 }
 
 
 // =========================================================
-// 28. LANDING
+// 27. LANDING
 // =========================================================
 
 function showLanding() {
@@ -2419,6 +2385,11 @@ function showLanding() {
 
     const footer =
         document.querySelector("footer");
+
+    const publicNav =
+        document.querySelector(
+            "header.navbar nav"
+        );
 
 
     if (main) {
@@ -2435,12 +2406,22 @@ function showLanding() {
     }
 
 
+    // Tornar a mostrar Funcions / IA / Comunitat
+
+    if (publicNav) {
+
+        publicNav.style.display = "";
+
+    }
+
+
     removeDashboard();
+
 }
 
 
 // =========================================================
-// 29. NAVIGATION
+// 28. NAVIGATION
 // =========================================================
 
 async function updateNavigation() {
@@ -2480,6 +2461,7 @@ async function updateNavigation() {
         `;
 
         return;
+
     }
 
 
@@ -2504,11 +2486,12 @@ async function updateNavigation() {
         </button>
 
     `;
+
 }
 
 
 // =========================================================
-// 30. OPEN DASHBOARD
+// 29. OPEN DASHBOARD
 // =========================================================
 
 async function openDashboard() {
@@ -2522,6 +2505,7 @@ async function openDashboard() {
         showLogin();
 
         return;
+
     }
 
 
@@ -2533,15 +2517,20 @@ async function openDashboard() {
 
     closeModal();
 
+
     showDashboard(
         user,
         profile
     );
+
+
+    updateNavigation();
+
 }
 
 
 // =========================================================
-// 31. AUTH STATE
+// 30. AUTH STATE
 // =========================================================
 
 supabaseClient.auth.onAuthStateChange(
@@ -2574,12 +2563,10 @@ supabaseClient.auth.onAuthStateChange(
 
 
 // =========================================================
-// 32. SCROLL
+// 31. SCROLL
 // =========================================================
 
-function scrollToSection(
-    sectionId
-) {
+function scrollToSection(sectionId) {
 
     const section =
         document.getElementById(
@@ -2591,13 +2578,16 @@ function scrollToSection(
 
 
     section.scrollIntoView({
+
         behavior: "smooth"
+
     });
+
 }
 
 
 // =========================================================
-// 33. INIT
+// 32. INIT
 // =========================================================
 
 document.addEventListener(
