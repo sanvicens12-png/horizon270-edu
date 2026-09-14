@@ -3,22 +3,30 @@
 // Supabase + Authentication + Profiles + Dashboard
 // =========================================================
 
-const SUPABASE_URL = "https://cecouhunurwkncfcjjor.supabase.co";
+
+// =========================================================
+// 1. SUPABASE
+// =========================================================
+
+const SUPABASE_URL =
+    "https://cecouhunurwkncfcjjor.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_mU_871SdiMJgSA1LHCLEAg_my7qG2oq";
 
-const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
-);
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
 
 
 // =========================================================
-// UTILITATS
+// 2. UTILITATS
 // =========================================================
 
 function escapeHTML(value) {
+
     return String(value ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -43,21 +51,52 @@ function showMessage(message, type = "") {
 
 
 // =========================================================
-// AUTH — REGISTRE
+// 3. ETIQUETES DELS COMPTES
 // =========================================================
 
-async function registerUser(email, password, displayName) {
+const ACCOUNT_LABELS = {
+
+    student: "Estudiant",
+
+    teacher: "Professor",
+
+    center: "Centre educatiu",
+
+    family: "Família",
+
+    professional: "Professional educatiu"
+
+};
+
+
+// =========================================================
+// 4. REGISTRE SUPABASE
+// =========================================================
+
+async function registerUser(
+    email,
+    password,
+    displayName,
+    accountType
+) {
 
     const { data, error } =
         await supabaseClient.auth.signUp({
 
-            email,
-            password,
+            email: email,
+
+            password: password,
 
             options: {
+
                 data: {
-                    display_name: displayName
+
+                    display_name: displayName,
+
+                    account_type: accountType
+
                 }
+
             }
 
         });
@@ -67,34 +106,46 @@ async function registerUser(email, password, displayName) {
 
         console.error(
             "Error de registre:",
-            error.message
+            error
         );
 
         return {
+
             success: false,
+
             error: error.message
+
         };
+
     }
 
 
     return {
+
         success: true,
-        data
+
+        data: data
+
     };
+
 }
 
 
 // =========================================================
-// AUTH — LOGIN
+// 5. LOGIN
 // =========================================================
 
-async function loginUser(email, password) {
+async function loginUser(
+    email,
+    password
+) {
 
     const { data, error } =
         await supabaseClient.auth.signInWithPassword({
 
-            email,
-            password
+            email: email,
+
+            password: password
 
         });
 
@@ -103,25 +154,33 @@ async function loginUser(email, password) {
 
         console.error(
             "Error d'inici de sessió:",
-            error.message
+            error
         );
 
         return {
+
             success: false,
+
             error: error.message
+
         };
+
     }
 
 
     return {
+
         success: true,
-        data
+
+        data: data
+
     };
+
 }
 
 
 // =========================================================
-// AUTH — LOGOUT
+// 6. LOGOUT
 // =========================================================
 
 async function logoutUser() {
@@ -134,19 +193,21 @@ async function logoutUser() {
 
         console.error(
             "Error tancant sessió:",
-            error.message
+            error
         );
 
         return false;
+
     }
 
 
     return true;
+
 }
 
 
 // =========================================================
-// USUARI ACTUAL
+// 7. USUARI ACTUAL
 // =========================================================
 
 async function getCurrentUser() {
@@ -154,26 +215,29 @@ async function getCurrentUser() {
     const {
         data: { user },
         error
-    } = await supabaseClient.auth.getUser();
+    } =
+        await supabaseClient.auth.getUser();
 
 
     if (error) {
 
         console.error(
-            "Error obtenint l'usuari:",
-            error.message
+            "Error obtenint usuari:",
+            error
         );
 
         return null;
+
     }
 
 
     return user;
+
 }
 
 
 // =========================================================
-// CREAR PERFIL
+// 8. CREAR PERFIL
 // =========================================================
 
 async function createProfile(
@@ -204,25 +268,33 @@ async function createProfile(
 
         console.error(
             "Error creant perfil:",
-            error.message
+            error
         );
 
         return {
+
             success: false,
+
             error: error.message
+
         };
+
     }
 
 
     return {
+
         success: true,
-        data
+
+        data: data
+
     };
+
 }
 
 
 // =========================================================
-// OBTENIR PERFIL
+// 9. OBTENIR PERFIL
 // =========================================================
 
 async function getProfile(userId) {
@@ -239,19 +311,84 @@ async function getProfile(userId) {
 
         console.error(
             "Error obtenint perfil:",
-            error.message
+            error
         );
 
         return null;
+
     }
 
 
     return data;
+
 }
 
 
 // =========================================================
-// LOGIN MODAL
+// 10. ASSEGURAR QUE EXISTEIX PERFIL
+// =========================================================
+
+async function ensureProfile(
+    user,
+    fallbackAccountType = "student"
+) {
+
+    if (!user) return null;
+
+
+    let profile =
+        await getProfile(user.id);
+
+
+    if (profile) {
+
+        return profile;
+
+    }
+
+
+    const metadata =
+        user.user_metadata || {};
+
+
+    const displayName =
+        metadata.display_name ||
+        user.email?.split("@")[0] ||
+        "Usuari";
+
+
+    const accountType =
+        metadata.account_type ||
+        fallbackAccountType;
+
+
+    const result =
+        await createProfile(
+            user.id,
+            displayName,
+            accountType
+        );
+
+
+    if (!result.success) {
+
+        console.error(
+            "No s'ha pogut crear el perfil:",
+            result.error
+        );
+
+        return null;
+
+    }
+
+
+    return result.data;
+
+}
+
+
+// =========================================================
+// 11. LOGIN MODAL
 // =========================================================
 
 function showLogin() {
@@ -261,6 +398,9 @@ function showLogin() {
 
     const content =
         document.getElementById("modalContent");
+
+
+    if (!modal || !content) return;
 
 
     content.innerHTML = `
@@ -353,17 +493,24 @@ function showLogin() {
     modal.classList.remove("hidden");
 
 
-    document
-        .getElementById("loginForm")
-        .addEventListener(
+    const form =
+        document.getElementById("loginForm");
+
+
+    if (form) {
+
+        form.addEventListener(
             "submit",
             handleLogin
         );
+
+    }
+
 }
 
 
 // =========================================================
-// REGISTRE — PAS 1
+// 12. REGISTRE — TIPUS DE COMPTE
 // =========================================================
 
 function showSignup() {
@@ -373,6 +520,9 @@ function showSignup() {
 
     const content =
         document.getElementById("modalContent");
+
+
+    if (!modal || !content) return;
 
 
     content.innerHTML = `
@@ -388,7 +538,7 @@ function showSignup() {
             </h2>
 
             <p>
-                Primer, explica'ns quin tipus de compte vols.
+                Selecciona el tipus de compte.
             </p>
 
 
@@ -432,8 +582,8 @@ function showSignup() {
                     </strong>
 
                     <small>
-                        Gestiona el teu espai educatiu
-                        encara que el teu centre no hi participi.
+                        Gestiona classes, activitats,
+                        materials i alumnes.
                     </small>
 
                 </button>
@@ -533,32 +683,33 @@ function showSignup() {
 
 
     modal.classList.remove("hidden");
+
 }
 
 
 // =========================================================
-// REGISTRE — PAS 2
+// 13. REGISTRE — DADES
 // =========================================================
 
 function selectAccountType(accountType) {
 
-    const labels = {
+    if (!ACCOUNT_LABELS[accountType]) {
 
-        student: "Estudiant",
+        console.error(
+            "Tipus de compte desconegut:",
+            accountType
+        );
 
-        teacher: "Professor",
+        return;
 
-        center: "Centre educatiu",
-
-        family: "Família",
-
-        professional: "Professional educatiu"
-
-    };
+    }
 
 
     const modalContent =
         document.getElementById("modalContent");
+
+
+    if (!modalContent) return;
 
 
     modalContent.innerHTML = `
@@ -567,7 +718,7 @@ function selectAccountType(accountType) {
 
             <span class="eyebrow">
                 ${escapeHTML(
-                    labels[accountType]
+                    ACCOUNT_LABELS[accountType]
                 )}
             </span>
 
@@ -639,7 +790,7 @@ function selectAccountType(accountType) {
                 <input
                     type="hidden"
                     id="signupAccountType"
-                    value="${accountType}"
+                    value="${escapeHTML(accountType)}"
                 >
 
 
@@ -665,7 +816,7 @@ function selectAccountType(accountType) {
                 class="back-button"
                 onclick="showSignup()"
             >
-                ← Tornar a seleccionar tipus
+                ← Tornar
             </button>
 
         </div>
@@ -673,17 +824,24 @@ function selectAccountType(accountType) {
     `;
 
 
-    document
-        .getElementById("signupForm")
-        .addEventListener(
+    const form =
+        document.getElementById("signupForm");
+
+
+    if (form) {
+
+        form.addEventListener(
             "submit",
             handleSignup
         );
+
+    }
+
 }
 
 
 // =========================================================
-// HANDLE SIGNUP
+// 14. HANDLE SIGNUP
 // =========================================================
 
 async function handleSignup(event) {
@@ -694,27 +852,27 @@ async function handleSignup(event) {
     const name =
         document
             .getElementById("signupName")
-            .value
+            ?.value
             .trim();
 
 
     const email =
         document
             .getElementById("signupEmail")
-            .value
+            ?.value
             .trim();
 
 
     const password =
         document
             .getElementById("signupPassword")
-            .value;
+            ?.value;
 
 
     const accountType =
         document
             .getElementById("signupAccountType")
-            .value;
+            ?.value;
 
 
     if (!name) {
@@ -725,10 +883,23 @@ async function handleSignup(event) {
         );
 
         return;
+
     }
 
 
-    if (password.length < 6) {
+    if (!email) {
+
+        showMessage(
+            "Escriu el teu correu electrònic.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    if (!password || password.length < 6) {
 
         showMessage(
             "La contrasenya ha de tenir almenys 6 caràcters.",
@@ -736,6 +907,19 @@ async function handleSignup(event) {
         );
 
         return;
+
+    }
+
+
+    if (!ACCOUNT_LABELS[accountType]) {
+
+        showMessage(
+            "Selecciona un tipus de compte.",
+            "error"
+        );
+
+        return;
+
     }
 
 
@@ -748,7 +932,8 @@ async function handleSignup(event) {
         await registerUser(
             email,
             password,
-            name
+            name,
+            accountType
         );
 
 
@@ -761,29 +946,41 @@ async function handleSignup(event) {
         );
 
         return;
+
     }
 
 
+    const user =
+        result.data?.user;
+
+
+    const session =
+        result.data?.session;
+
+
     /*
-     * Supabase pot requerir confirmació
-     * del correu abans de crear una sessió.
+     * CAS 1:
+     * Supabase requereix confirmació del correu.
      */
 
-    if (
-        result.data.user &&
-        !result.data.session
-    ) {
+    if (user && !session) {
 
         showMessage(
-            "Compte creat. Revisa el teu correu per confirmar-lo.",
+            "Compte creat correctament. Revisa el teu correu per confirmar-lo i després inicia sessió.",
             "success"
         );
 
         return;
+
     }
 
 
-    if (!result.data.session) {
+    /*
+     * CAS 2:
+     * No tenim sessió.
+     */
+
+    if (!user || !session) {
 
         showMessage(
             "El compte s'ha creat, però encara no hi ha una sessió activa.",
@@ -791,30 +988,65 @@ async function handleSignup(event) {
         );
 
         return;
+
     }
 
 
     /*
-     * Crear perfil.
+     * CAS 3:
+     * Hi ha sessió.
+     * Creem el perfil.
      */
 
     const profileResult =
         await createProfile(
-            result.data.user.id,
+            user.id,
             name,
             accountType
         );
 
 
+    /*
+     * Si el perfil ja existia, intentem recuperar-lo.
+     */
+
     if (!profileResult.success) {
 
+        console.warn(
+            "No s'ha pogut crear el perfil:",
+            profileResult.error
+        );
+
+
+        const existingProfile =
+            await getProfile(
+                user.id
+            );
+
+
+        if (existingProfile) {
+
+            closeModal();
+
+            showDashboard(
+                user,
+                existingProfile
+            );
+
+            updateNavigation();
+
+            return;
+
+        }
+
+
         showMessage(
-            "El compte s'ha creat, però no s'ha pogut crear el perfil: " +
-            profileResult.error,
+            "El compte s'ha creat, però hi ha hagut un problema creant el perfil. Torna a iniciar sessió.",
             "error"
         );
 
         return;
+
     }
 
 
@@ -828,16 +1060,19 @@ async function handleSignup(event) {
         closeModal();
 
         showDashboard(
-            result.data.user,
+            user,
             profileResult.data
         );
 
-    }, 400);
+        updateNavigation();
+
+    }, 500);
+
 }
 
 
 // =========================================================
-// HANDLE LOGIN
+// 15. HANDLE LOGIN
 // =========================================================
 
 async function handleLogin(event) {
@@ -848,14 +1083,26 @@ async function handleLogin(event) {
     const email =
         document
             .getElementById("loginEmail")
-            .value
+            ?.value
             .trim();
 
 
     const password =
         document
             .getElementById("loginPassword")
-            .value;
+            ?.value;
+
+
+    if (!email || !password) {
+
+        showMessage(
+            "Omple tots els camps.",
+            "error"
+        );
+
+        return;
+
+    }
 
 
     showMessage(
@@ -879,12 +1126,33 @@ async function handleLogin(event) {
         );
 
         return;
+
     }
 
 
+    const user =
+        result.data?.user;
+
+
+    if (!user) {
+
+        showMessage(
+            "No s'ha pogut obtenir l'usuari.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * Recuperem el perfil.
+     */
+
     const profile =
-        await getProfile(
-            result.data.user.id
+        await ensureProfile(
+            user
         );
 
 
@@ -898,16 +1166,19 @@ async function handleLogin(event) {
         closeModal();
 
         showDashboard(
-            result.data.user,
+            user,
             profile
         );
 
+        updateNavigation();
+
     }, 400);
+
 }
 
 
 // =========================================================
-// MODAL
+// 16. MODAL
 // =========================================================
 
 function closeModal() {
@@ -916,19 +1187,25 @@ function closeModal() {
         document.getElementById("modal");
 
 
-    if (modal) {
+    if (!modal) return;
 
-        modal.classList.add("hidden");
 
-    }
+    modal.classList.add("hidden");
+
 }
 
 
 // =========================================================
-// DASHBOARD
+// 17. DASHBOARD
 // =========================================================
 
-function showDashboard(user, profile = null) {
+function showDashboard(
+    user,
+    profile = null
+) {
+
+    if (!user) return;
+
 
     const main =
         document.querySelector("main");
@@ -937,10 +1214,11 @@ function showDashboard(user, profile = null) {
         document.querySelector("footer");
 
 
-    if (!main) return;
+    if (main) {
 
+        main.style.display = "none";
 
-    main.style.display = "none";
+    }
 
 
     if (footer) {
@@ -966,34 +1244,20 @@ function showDashboard(user, profile = null) {
 
 
     const metadata =
-        user?.user_metadata || {};
+        user.user_metadata || {};
 
 
     const displayName =
         profile?.display_name ||
         metadata.display_name ||
-        user?.email?.split("@")[0] ||
+        user.email?.split("@")[0] ||
         "Usuari";
 
 
     const accountType =
         profile?.account_type ||
+        metadata.account_type ||
         "student";
-
-
-    const accountLabels = {
-
-        student: "Estudiant",
-
-        teacher: "Professor",
-
-        center: "Centre educatiu",
-
-        family: "Família",
-
-        professional: "Professional educatiu"
-
-    };
 
 
     dashboard.innerHTML = `
@@ -1013,6 +1277,7 @@ function showDashboard(user, profile = null) {
 
 
                 <nav class="dashboard-nav">
+
 
                     <button
                         class="dashboard-nav-item active"
@@ -1067,15 +1332,17 @@ function showDashboard(user, profile = null) {
                         <span>Perfil</span>
                     </button>
 
+
                 </nav>
 
 
                 <div class="dashboard-sidebar-bottom">
 
+
                     <div class="dashboard-account-type">
 
                         ${escapeHTML(
-                            accountLabels[accountType] ||
+                            ACCOUNT_LABELS[accountType] ||
                             "Usuari"
                         )}
 
@@ -1089,31 +1356,43 @@ function showDashboard(user, profile = null) {
                         Tancar sessió
                     </button>
 
+
                 </div>
+
 
             </aside>
 
 
             <section class="dashboard-content">
 
+
                 <header class="dashboard-header">
+
 
                     <div>
 
                         <span class="eyebrow">
+
                             ${escapeHTML(
-                                accountLabels[accountType] ||
+                                ACCOUNT_LABELS[accountType] ||
                                 "HORIZON270.EDU"
                             )}
+
                         </span>
 
+
                         <h1>
-                            Hola, ${escapeHTML(displayName)}.
+
+                            Hola,
+                            ${escapeHTML(displayName)}.
+
                         </h1>
+
 
                         <p>
                             Benvingut al teu espai educatiu.
                         </p>
+
 
                     </div>
 
@@ -1132,6 +1411,7 @@ function showDashboard(user, profile = null) {
 
                     </div>
 
+
                 </header>
 
 
@@ -1140,7 +1420,9 @@ function showDashboard(user, profile = null) {
                     class="dashboard-view"
                 ></div>
 
+
             </section>
+
 
         </div>
 
@@ -1157,14 +1439,18 @@ function showDashboard(user, profile = null) {
             "dashboard-view"
         )
     );
+
 }
 
 
 // =========================================================
-// DASHBOARD HOME
+// 18. HOME DASHBOARD
 // =========================================================
 
 function showDashboardHome(view) {
+
+    if (!view) return;
+
 
     view.innerHTML = `
 
@@ -1177,19 +1463,23 @@ function showDashboardHome(view) {
                     ✦
                 </div>
 
+
                 <span class="dashboard-card-label">
                     HORIZON270.EDU
                 </span>
+
 
                 <h2>
                     El teu aprenentatge,
                     <span>al teu ritme.</span>
                 </h2>
 
+
                 <p>
                     Aquí començarà el teu espai personal
                     d'aprenentatge, gestió i seguiment.
                 </p>
+
 
                 <button
                     class="btn primary"
@@ -1197,6 +1487,7 @@ function showDashboardHome(view) {
                 >
                     Obrir Horizon AI →
                 </button>
+
 
             </article>
 
@@ -1207,13 +1498,16 @@ function showDashboardHome(view) {
                     PROGRÉS
                 </span>
 
+
                 <div class="dashboard-stat">
                     —
                 </div>
 
+
                 <p>
                     Encara no hi ha dades.
                 </p>
+
 
             </article>
 
@@ -1224,13 +1518,16 @@ function showDashboardHome(view) {
                     TASQUES
                 </span>
 
+
                 <div class="dashboard-stat">
                     0
                 </div>
 
+
                 <p>
                     Tasques pendents
                 </p>
+
 
             </article>
 
@@ -1241,29 +1538,36 @@ function showDashboardHome(view) {
                     CLASSES
                 </span>
 
+
                 <div class="dashboard-stat">
                     0
                 </div>
+
 
                 <p>
                     Classes connectades
                 </p>
 
+
             </article>
+
 
         </div>
 
 
         <section class="dashboard-welcome">
 
+
             <span class="eyebrow">
                 HORIZON270.EDU
             </span>
+
 
             <h2>
                 El teu espai
                 <span>educatiu.</span>
             </h2>
+
 
             <p>
                 A mesura que connectem les diferents parts
@@ -1271,14 +1575,16 @@ function showDashboardHome(view) {
                 activitats, calendari, progrés i molt més.
             </p>
 
+
         </section>
 
     `;
+
 }
 
 
 // =========================================================
-// DASHBOARD SECTIONS
+// 19. NAVEGACIÓ DASHBOARD
 // =========================================================
 
 function dashboardSection(section) {
@@ -1312,12 +1618,19 @@ function dashboardSection(section) {
 
 
     const names = [
+
         "home",
+
         "classes",
+
         "tasks",
+
         "calendar",
+
         "ai",
+
         "profile"
+
     ];
 
 
@@ -1336,58 +1649,74 @@ function dashboardSection(section) {
     }
 
 
-    if (section === "home") {
+    switch (section) {
 
-        showDashboardHome(view);
+        case "home":
+
+            showDashboardHome(
+                view
+            );
+
+            break;
+
+
+        case "classes":
+
+            showDashboardPlaceholder(
+                view,
+                "Classes",
+                "Aquí apareixeran les classes i els espais educatius als quals estiguis connectat."
+            );
+
+            break;
+
+
+        case "tasks":
+
+            showDashboardPlaceholder(
+                view,
+                "Tasques",
+                "Aquí apareixeran activitats, deures, exercicis i treballs."
+            );
+
+            break;
+
+
+        case "calendar":
+
+            showDashboardPlaceholder(
+                view,
+                "Calendari",
+                "Aquí apareixeran classes, exàmens, reunions i activitats."
+            );
+
+            break;
+
+
+        case "ai":
+
+            showDashboardAI(
+                view
+            );
+
+            break;
+
+
+        case "profile":
+
+            showDashboardProfile(
+                view
+            );
+
+            break;
 
     }
 
-    else if (section === "classes") {
-
-        showDashboardPlaceholder(
-            view,
-            "Classes",
-            "Aquí apareixeran les classes i els espais educatius als quals estiguis connectat."
-        );
-
-    }
-
-    else if (section === "tasks") {
-
-        showDashboardPlaceholder(
-            view,
-            "Tasques",
-            "Aquí apareixeran activitats, deures, exercicis i treballs."
-        );
-
-    }
-
-    else if (section === "calendar") {
-
-        showDashboardPlaceholder(
-            view,
-            "Calendari",
-            "Aquí apareixeran classes, exàmens, reunions i activitats."
-        );
-
-    }
-
-    else if (section === "ai") {
-
-        showDashboardAI(view);
-
-    }
-
-    else if (section === "profile") {
-
-        showDashboardProfile(view);
-
-    }
 }
 
 
 // =========================================================
-// PLACEHOLDER
+// 20. PLACEHOLDER
 // =========================================================
 
 function showDashboardPlaceholder(
@@ -1404,26 +1733,31 @@ function showDashboardPlaceholder(
                 ✦
             </div>
 
+
             <span class="eyebrow">
                 HORIZON270.EDU
             </span>
+
 
             <h2>
                 ${escapeHTML(title)}
             </h2>
 
+
             <p>
                 ${escapeHTML(description)}
             </p>
 
+
         </section>
 
     `;
+
 }
 
 
 // =========================================================
-// HORIZON AI
+// 21. HORIZON AI
 // =========================================================
 
 function showDashboardAI(view) {
@@ -1432,33 +1766,41 @@ function showDashboardAI(view) {
 
         <section class="dashboard-ai">
 
+
             <div class="dashboard-ai-header">
 
                 <span class="eyebrow">
                     INTEL·LIGÈNCIA ARTIFICIAL
                 </span>
 
+
                 <h2>
                     Horizon <span>AI</span>
                 </h2>
+
 
                 <p>
                     Una IA educativa orientada a ajudar-te
                     a comprendre i aprendre.
                 </p>
 
+
             </div>
 
 
             <div class="dashboard-ai-panel">
 
+
                 <div class="dashboard-ai-top">
 
+
                     <div class="dashboard-ai-brand">
+
 
                         <div class="ai-avatar">
                             ✦
                         </div>
+
 
                         <div>
 
@@ -1466,11 +1808,13 @@ function showDashboardAI(view) {
                                 Horizon AI
                             </strong>
 
+
                             <small>
                                 Assistent d'aprenentatge
                             </small>
 
                         </div>
+
 
                     </div>
 
@@ -1479,34 +1823,41 @@ function showDashboardAI(view) {
                         ● Preparada
                     </span>
 
+
                 </div>
 
 
                 <div class="dashboard-ai-empty">
 
+
                     <div>
                         ✦
                     </div>
 
+
                     <h3>
                         Comencem a aprendre.
                     </h3>
+
 
                     <p>
                         La IA educativa s'integrarà
                         aquí en la següent fase.
                     </p>
 
+
                 </div>
 
 
                 <div class="dashboard-ai-input">
+
 
                     <input
                         type="text"
                         placeholder="Escriu què vols entendre..."
                         disabled
                     >
+
 
                     <button
                         class="btn primary"
@@ -1515,27 +1866,40 @@ function showDashboardAI(view) {
                         Enviar
                     </button>
 
+
                 </div>
 
+
             </div>
+
 
         </section>
 
     `;
+
 }
 
 
 // =========================================================
-// PROFILE
+// 22. PERFIL
 // =========================================================
 
 async function showDashboardProfile(view) {
+
+    if (!view) return;
+
 
     const user =
         await getCurrentUser();
 
 
-    if (!user) return;
+    if (!user) {
+
+        showLanding();
+
+        return;
+
+    }
 
 
     const profile =
@@ -1551,26 +1915,13 @@ async function showDashboardProfile(view) {
     const displayName =
         profile?.display_name ||
         metadata.display_name ||
+        user.email?.split("@")[0] ||
         "Usuari";
-
-
-    const labels = {
-
-        student: "Estudiant",
-
-        teacher: "Professor",
-
-        center: "Centre educatiu",
-
-        family: "Família",
-
-        professional: "Professional educatiu"
-
-    };
 
 
     const type =
         profile?.account_type ||
+        metadata.account_type ||
         "student";
 
 
@@ -1578,9 +1929,11 @@ async function showDashboardProfile(view) {
 
         <section class="dashboard-profile-page">
 
+
             <span class="eyebrow">
                 EL MEU COMPTE
             </span>
+
 
             <h2>
                 El teu <span>perfil.</span>
@@ -1588,6 +1941,7 @@ async function showDashboardProfile(view) {
 
 
             <div class="profile-card">
+
 
                 <div class="profile-avatar">
 
@@ -1602,9 +1956,11 @@ async function showDashboardProfile(view) {
 
                 <div class="profile-info">
 
+
                     <span class="profile-label">
                         NOM
                     </span>
+
 
                     <strong>
                         ${escapeHTML(displayName)}
@@ -1615,9 +1971,10 @@ async function showDashboardProfile(view) {
                         TIPUS DE COMPTE
                     </span>
 
+
                     <strong>
                         ${escapeHTML(
-                            labels[type] ||
+                            ACCOUNT_LABELS[type] ||
                             "Usuari"
                         )}
                     </strong>
@@ -1627,24 +1984,29 @@ async function showDashboardProfile(view) {
                         CORREU ELECTRÒNIC
                     </span>
 
+
                     <strong>
                         ${escapeHTML(
                             user.email || ""
                         )}
                     </strong>
 
+
                 </div>
 
+
             </div>
+
 
         </section>
 
     `;
+
 }
 
 
 // =========================================================
-// LOGOUT
+// 23. LOGOUT
 // =========================================================
 
 async function handleLogout() {
@@ -1660,6 +2022,7 @@ async function handleLogout() {
         );
 
         return;
+
     }
 
 
@@ -1668,11 +2031,12 @@ async function handleLogout() {
     showLanding();
 
     updateNavigation();
+
 }
 
 
 // =========================================================
-// REMOVE DASHBOARD
+// 24. ELIMINAR DASHBOARD
 // =========================================================
 
 function removeDashboard() {
@@ -1688,11 +2052,12 @@ function removeDashboard() {
         dashboard.remove();
 
     }
+
 }
 
 
 // =========================================================
-// LANDING
+// 25. MOSTRAR LANDING
 // =========================================================
 
 function showLanding() {
@@ -1719,18 +2084,15 @@ function showLanding() {
 
 
     removeDashboard();
+
 }
 
 
 // =========================================================
-// NAVIGATION
+// 26. ACTUALITZAR NAVBAR
 // =========================================================
 
 async function updateNavigation() {
-
-    const user =
-        await getCurrentUser();
-
 
     const navActions =
         document.querySelector(
@@ -1739,6 +2101,10 @@ async function updateNavigation() {
 
 
     if (!navActions) return;
+
+
+    const user =
+        await getCurrentUser();
 
 
     if (!user) {
@@ -1763,6 +2129,7 @@ async function updateNavigation() {
         `;
 
         return;
+
     }
 
 
@@ -1787,11 +2154,12 @@ async function updateNavigation() {
         </button>
 
     `;
+
 }
 
 
 // =========================================================
-// OPEN DASHBOARD
+// 27. OBRIR DASHBOARD
 // =========================================================
 
 async function openDashboard() {
@@ -1805,30 +2173,33 @@ async function openDashboard() {
         showLogin();
 
         return;
+
     }
 
 
     const profile =
-        await getProfile(
-            user.id
+        await ensureProfile(
+            user
         );
 
 
     closeModal();
 
+
     showDashboard(
         user,
         profile
     );
+
 }
 
 
 // =========================================================
-// AUTH STATE
+// 28. AUTH STATE
 // =========================================================
 
 supabaseClient.auth.onAuthStateChange(
-    (event, session) => {
+    async (event, session) => {
 
         console.log(
             "Auth:",
@@ -1838,7 +2209,7 @@ supabaseClient.auth.onAuthStateChange(
 
         if (session) {
 
-            updateNavigation();
+            await updateNavigation();
 
         }
 
@@ -1848,7 +2219,7 @@ supabaseClient.auth.onAuthStateChange(
 
             showLanding();
 
-            updateNavigation();
+            await updateNavigation();
 
         }
 
@@ -1857,7 +2228,7 @@ supabaseClient.auth.onAuthStateChange(
 
 
 // =========================================================
-// SCROLL
+// 29. SCROLL
 // =========================================================
 
 function scrollToSection(sectionId) {
@@ -1872,13 +2243,64 @@ function scrollToSection(sectionId) {
 
 
     section.scrollIntoView({
-        behavior: "smooth"
+
+        behavior: "smooth",
+
+        block: "start"
+
     });
+
 }
 
 
 // =========================================================
-// INIT
+// 30. TANCAR MODAL CLICANT FORA
+// =========================================================
+
+document.addEventListener(
+    "click",
+    event => {
+
+        const modal =
+            document.getElementById("modal");
+
+
+        if (!modal) return;
+
+
+        if (
+            event.target === modal
+        ) {
+
+            closeModal();
+
+        }
+
+    }
+);
+
+
+// =========================================================
+// 31. ESC PER TANCAR MODAL
+// =========================================================
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key !== "Escape") {
+            return;
+        }
+
+
+        closeModal();
+
+    }
+);
+
+
+// =========================================================
+// 32. INIT
 // =========================================================
 
 document.addEventListener(
@@ -1899,8 +2321,8 @@ document.addEventListener(
         if (session) {
 
             const profile =
-                await getProfile(
-                    session.user.id
+                await ensureProfile(
+                    session.user
                 );
 
 
