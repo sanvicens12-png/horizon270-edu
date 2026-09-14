@@ -1,6 +1,6 @@
 // =========================================================
 // HORIZON270.EDU
-// Supabase + Authentication + UI
+// Supabase + Authentication + Dashboard
 // =========================================================
 
 
@@ -12,7 +12,6 @@ const SUPABASE_URL = "https://cecouhunurwkncfcjjor.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_mU_871SdiMJgSA1LHCLEAg_my7qG2oq";
-
 
 const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
@@ -33,9 +32,11 @@ async function registerUser(email, password, displayName) {
             password: password,
 
             options: {
+
                 data: {
                     display_name: displayName
                 }
+
             }
 
         });
@@ -52,6 +53,7 @@ async function registerUser(email, password, displayName) {
             success: false,
             error: error.message
         };
+
     }
 
 
@@ -59,6 +61,7 @@ async function registerUser(email, password, displayName) {
         success: true,
         data: data
     };
+
 }
 
 
@@ -88,6 +91,7 @@ async function loginUser(email, password) {
             success: false,
             error: error.message
         };
+
     }
 
 
@@ -95,6 +99,7 @@ async function loginUser(email, password) {
         success: true,
         data: data
     };
+
 }
 
 
@@ -116,10 +121,12 @@ async function logoutUser() {
         );
 
         return false;
+
     }
 
 
     return true;
+
 }
 
 
@@ -143,10 +150,12 @@ async function getCurrentUser() {
         );
 
         return null;
+
     }
 
 
     return user;
+
 }
 
 
@@ -156,8 +165,11 @@ async function getCurrentUser() {
 
 function showLogin() {
 
-    const modal = document.getElementById("modal");
-    const content = document.getElementById("modalContent");
+    const modal =
+        document.getElementById("modal");
+
+    const content =
+        document.getElementById("modalContent");
 
 
     content.innerHTML = `
@@ -179,28 +191,34 @@ function showLogin() {
 
             <form id="loginForm">
 
-                <label for="loginEmail">
-                    Correu electrònic
-                </label>
+                <div>
+                    <label for="loginEmail">
+                        Correu electrònic
+                    </label>
 
-                <input
-                    id="loginEmail"
-                    type="email"
-                    placeholder="tu@exemple.com"
-                    required
-                >
+                    <input
+                        id="loginEmail"
+                        type="email"
+                        placeholder="tu@exemple.com"
+                        autocomplete="email"
+                        required
+                    >
+                </div>
 
 
-                <label for="loginPassword">
-                    Contrasenya
-                </label>
+                <div>
+                    <label for="loginPassword">
+                        Contrasenya
+                    </label>
 
-                <input
-                    id="loginPassword"
-                    type="password"
-                    placeholder="La teva contrasenya"
-                    required
-                >
+                    <input
+                        id="loginPassword"
+                        type="password"
+                        placeholder="La teva contrasenya"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
 
 
                 <button
@@ -248,6 +266,7 @@ function showLogin() {
         "submit",
         handleLogin
     );
+
 }
 
 
@@ -257,8 +276,11 @@ function showLogin() {
 
 function showSignup() {
 
-    const modal = document.getElementById("modal");
-    const content = document.getElementById("modalContent");
+    const modal =
+        document.getElementById("modal");
+
+    const content =
+        document.getElementById("modalContent");
 
 
     content.innerHTML = `
@@ -281,41 +303,57 @@ function showSignup() {
             <form id="signupForm">
 
 
-                <label for="signupName">
-                    Nom
-                </label>
+                <div>
 
-                <input
-                    id="signupName"
-                    type="text"
-                    placeholder="El teu nom"
-                    required
-                >
+                    <label for="signupName">
+                        Nom
+                    </label>
 
+                    <input
+                        id="signupName"
+                        type="text"
+                        placeholder="El teu nom"
+                        autocomplete="name"
+                        maxlength="80"
+                        required
+                    >
 
-                <label for="signupEmail">
-                    Correu electrònic
-                </label>
-
-                <input
-                    id="signupEmail"
-                    type="email"
-                    placeholder="tu@exemple.com"
-                    required
-                >
+                </div>
 
 
-                <label for="signupPassword">
-                    Contrasenya
-                </label>
+                <div>
 
-                <input
-                    id="signupPassword"
-                    type="password"
-                    placeholder="Mínim 6 caràcters"
-                    minlength="6"
-                    required
-                >
+                    <label for="signupEmail">
+                        Correu electrònic
+                    </label>
+
+                    <input
+                        id="signupEmail"
+                        type="email"
+                        placeholder="tu@exemple.com"
+                        autocomplete="email"
+                        required
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label for="signupPassword">
+                        Contrasenya
+                    </label>
+
+                    <input
+                        id="signupPassword"
+                        type="password"
+                        placeholder="Mínim 6 caràcters"
+                        autocomplete="new-password"
+                        minlength="6"
+                        required
+                    >
+
+                </div>
 
 
                 <button
@@ -364,6 +402,7 @@ function showSignup() {
         "submit",
         handleSignup
     );
+
 }
 
 
@@ -377,19 +416,47 @@ async function handleSignup(event) {
 
 
     const name =
-        document.getElementById("signupName").value.trim();
+        document
+            .getElementById("signupName")
+            .value
+            .trim();
 
 
     const email =
-        document.getElementById("signupEmail").value.trim();
+        document
+            .getElementById("signupEmail")
+            .value
+            .trim();
 
 
     const password =
-        document.getElementById("signupPassword").value;
+        document
+            .getElementById("signupPassword")
+            .value;
 
 
     const message =
         document.getElementById("authMessage");
+
+
+    if (!name) {
+
+        message.textContent =
+            "Escriu el teu nom.";
+
+        return;
+
+    }
+
+
+    if (password.length < 6) {
+
+        message.textContent =
+            "La contrasenya ha de tenir almenys 6 caràcters.";
+
+        return;
+
+    }
 
 
     message.textContent =
@@ -411,13 +478,14 @@ async function handleSignup(event) {
             result.error;
 
         return;
+
     }
 
 
     /*
-     * Supabase pot requerir confirmació
-     * del correu electrònic abans de permetre
-     * iniciar sessió.
+     * Si Supabase requereix confirmació
+     * del correu, encara no existeix
+     * una sessió activa.
      */
 
     if (
@@ -425,22 +493,51 @@ async function handleSignup(event) {
         !result.data.session
     ) {
 
-        message.textContent =
-            "Compte creat. Revisa el teu correu electrònic per confirmar-lo.";
+        message.innerHTML = `
+
+            <div class="auth-success">
+
+                <strong>
+                    Compte creat correctament.
+                </strong>
+
+                <p>
+                    Revisa el teu correu electrònic
+                    per confirmar el compte.
+                </p>
+
+            </div>
+
+        `;
 
         return;
+
     }
 
 
-    message.textContent =
-        "Compte creat correctament!";
+    /*
+     * Si tenim sessió immediatament,
+     * entrem directament al Dashboard.
+     */
+
+    if (result.data.session) {
+
+        message.textContent =
+            "Compte creat. Entrant...";
 
 
-    setTimeout(() => {
+        setTimeout(() => {
 
-        closeModal();
+            closeModal();
 
-    }, 1200);
+            showDashboard(
+                result.data.user
+            );
+
+        }, 400);
+
+    }
+
 }
 
 
@@ -454,11 +551,16 @@ async function handleLogin(event) {
 
 
     const email =
-        document.getElementById("loginEmail").value.trim();
+        document
+            .getElementById("loginEmail")
+            .value
+            .trim();
 
 
     const password =
-        document.getElementById("loginPassword").value;
+        document
+            .getElementById("loginPassword")
+            .value;
 
 
     const message =
@@ -483,20 +585,24 @@ async function handleLogin(event) {
             result.error;
 
         return;
+
     }
 
 
     message.textContent =
-        "Sessió iniciada correctament.";
+        "Sessió iniciada. Entrant...";
 
 
     setTimeout(() => {
 
         closeModal();
 
-        updateNavigation();
+        showDashboard(
+            result.data.user
+        );
 
-    }, 700);
+    }, 400);
+
 }
 
 
@@ -511,11 +617,863 @@ function closeModal() {
 
 
     modal.classList.add("hidden");
+
 }
 
 
 // =========================================================
-// 11. UPDATE NAVIGATION
+// 11. LANDING PAGE
+// =========================================================
+
+function showLanding() {
+
+    const main =
+        document.querySelector("main");
+
+    const footer =
+        document.querySelector("footer");
+
+
+    if (main) {
+
+        main.style.display = "";
+
+    }
+
+
+    if (footer) {
+
+        footer.style.display = "";
+
+    }
+
+
+    removeDashboard();
+
+}
+
+
+// =========================================================
+// 12. DASHBOARD
+// =========================================================
+
+function showDashboard(user) {
+
+    const main =
+        document.querySelector("main");
+
+    const footer =
+        document.querySelector("footer");
+
+
+    if (!main) {
+        return;
+    }
+
+
+    /*
+     * Amaguem la landing.
+     */
+
+    main.style.display = "none";
+
+
+    if (footer) {
+
+        footer.style.display = "none";
+
+    }
+
+
+    removeDashboard();
+
+
+    const dashboard =
+        document.createElement("div");
+
+
+    dashboard.id =
+        "dashboard";
+
+
+    dashboard.className =
+        "dashboard";
+
+
+    const metadata =
+        user?.user_metadata || {};
+
+
+    const displayName =
+        metadata.display_name ||
+        user?.email?.split("@")[0] ||
+        "Usuari";
+
+
+    dashboard.innerHTML = `
+
+        <div class="dashboard-shell">
+
+
+            <!-- SIDEBAR -->
+
+            <aside class="dashboard-sidebar">
+
+                <div class="dashboard-brand">
+
+                    <div class="logo">
+                        Horizon<span>270</span><small>.edu</small>
+                    </div>
+
+                </div>
+
+
+                <nav class="dashboard-nav">
+
+                    <button
+                        class="dashboard-nav-item active"
+                        onclick="dashboardSection('home')"
+                    >
+                        <span>⌂</span>
+                        <span>Inici</span>
+                    </button>
+
+
+                    <button
+                        class="dashboard-nav-item"
+                        onclick="dashboardSection('classes')"
+                    >
+                        <span>▣</span>
+                        <span>Classes</span>
+                    </button>
+
+
+                    <button
+                        class="dashboard-nav-item"
+                        onclick="dashboardSection('tasks')"
+                    >
+                        <span>✓</span>
+                        <span>Tasques</span>
+                    </button>
+
+
+                    <button
+                        class="dashboard-nav-item"
+                        onclick="dashboardSection('calendar')"
+                    >
+                        <span>□</span>
+                        <span>Calendari</span>
+                    </button>
+
+
+                    <button
+                        class="dashboard-nav-item"
+                        onclick="dashboardSection('ai')"
+                    >
+                        <span>✦</span>
+                        <span>Horizon AI</span>
+                    </button>
+
+
+                    <button
+                        class="dashboard-nav-item"
+                        onclick="dashboardSection('profile')"
+                    >
+                        <span>○</span>
+                        <span>Perfil</span>
+                    </button>
+
+                </nav>
+
+
+                <div class="dashboard-sidebar-bottom">
+
+                    <button
+                        class="dashboard-logout"
+                        onclick="handleLogout()"
+                    >
+                        Tancar sessió
+                    </button>
+
+                </div>
+
+            </aside>
+
+
+            <!-- CONTENT -->
+
+            <section class="dashboard-content">
+
+
+                <header class="dashboard-header">
+
+                    <div>
+
+                        <span class="eyebrow">
+                            HORIZON270.EDU
+                        </span>
+
+                        <h1>
+                            Hola, ${escapeHTML(displayName)}.
+                        </h1>
+
+                        <p>
+                            Benvingut al teu espai educatiu.
+                        </p>
+
+                    </div>
+
+
+                    <div class="dashboard-profile">
+
+                        <div class="avatar">
+                            ${escapeHTML(
+                                displayName
+                                    .charAt(0)
+                                    .toUpperCase()
+                            )}
+                        </div>
+
+                    </div>
+
+                </header>
+
+
+                <!-- DASHBOARD HOME -->
+
+                <div
+                    id="dashboard-view"
+                    class="dashboard-view"
+                >
+
+                    <div class="dashboard-grid">
+
+
+                        <article class="dashboard-card dashboard-card-main">
+
+                            <div class="dashboard-card-icon">
+                                ✦
+                            </div>
+
+                            <span class="dashboard-card-label">
+                                HORITZÓ D'APRENENTATGE
+                            </span>
+
+                            <h2>
+                                El teu aprenentatge,
+                                <span>al teu ritme.</span>
+                            </h2>
+
+                            <p>
+                                Horizon270.edu t'ajudarà a entendre
+                                què domines, què necessites reforçar
+                                i quin és el següent pas.
+                            </p>
+
+                            <button
+                                class="btn primary"
+                                onclick="dashboardSection('ai')"
+                            >
+                                Obrir Horizon AI →
+                            </button>
+
+                        </article>
+
+
+                        <article class="dashboard-card">
+
+                            <span class="dashboard-card-label">
+                                PROGRÉS
+                            </span>
+
+                            <div class="dashboard-stat">
+                                —
+                            </div>
+
+                            <p>
+                                Encara no hi ha dades
+                                d'aprenentatge.
+                            </p>
+
+                        </article>
+
+
+                        <article class="dashboard-card">
+
+                            <span class="dashboard-card-label">
+                                TASQUES
+                            </span>
+
+                            <div class="dashboard-stat">
+                                0
+                            </div>
+
+                            <p>
+                                Tasques pendents
+                            </p>
+
+                        </article>
+
+
+                        <article class="dashboard-card">
+
+                            <span class="dashboard-card-label">
+                                CLASSES
+                            </span>
+
+                            <div class="dashboard-stat">
+                                0
+                            </div>
+
+                            <p>
+                                Classes connectades
+                            </p>
+
+                        </article>
+
+
+                    </div>
+
+
+                    <section class="dashboard-welcome">
+
+                        <span class="eyebrow">
+                            PRIMER PAS
+                        </span>
+
+                        <h2>
+                            Configura el teu
+                            <span>espai educatiu.</span>
+                        </h2>
+
+                        <p>
+                            Quan el teu centre, professor o compte
+                            personal estigui configurat, aquí apareixeran
+                            les teves classes, activitats, calendari,
+                            tasques i progrés.
+                        </p>
+
+                    </section>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    `;
+
+
+    document.body.appendChild(
+        dashboard
+    );
+
+}
+
+
+// =========================================================
+// 13. REMOVE DASHBOARD
+// =========================================================
+
+function removeDashboard() {
+
+    const dashboard =
+        document.getElementById("dashboard");
+
+
+    if (dashboard) {
+
+        dashboard.remove();
+
+    }
+
+}
+
+
+// =========================================================
+// 14. DASHBOARD SECTIONS
+// =========================================================
+
+function dashboardSection(section) {
+
+    const view =
+        document.getElementById(
+            "dashboard-view"
+        );
+
+
+    if (!view) {
+        return;
+    }
+
+
+    document
+        .querySelectorAll(
+            ".dashboard-nav-item"
+        )
+        .forEach(button => {
+
+            button.classList.remove(
+                "active"
+            );
+
+        });
+
+
+    const buttons =
+        document.querySelectorAll(
+            ".dashboard-nav-item"
+        );
+
+
+    const sectionNames = [
+        "home",
+        "classes",
+        "tasks",
+        "calendar",
+        "ai",
+        "profile"
+    ];
+
+
+    const index =
+        sectionNames.indexOf(section);
+
+
+    if (index >= 0 && buttons[index]) {
+
+        buttons[index]
+            .classList.add("active");
+
+    }
+
+
+    if (section === "home") {
+
+        showDashboardHome(view);
+
+    }
+
+    else if (section === "classes") {
+
+        showDashboardPlaceholder(
+            view,
+            "Classes",
+            "Aquí apareixeran les teves classes i els centres als quals estàs connectat."
+        );
+
+    }
+
+    else if (section === "tasks") {
+
+        showDashboardPlaceholder(
+            view,
+            "Tasques",
+            "Aquí apareixeran activitats, deures i treballs pendents."
+        );
+
+    }
+
+    else if (section === "calendar") {
+
+        showDashboardPlaceholder(
+            view,
+            "Calendari",
+            "Aquí apareixeran classes, exàmens, reunions i activitats."
+        );
+
+    }
+
+    else if (section === "ai") {
+
+        showDashboardAI(view);
+
+    }
+
+    else if (section === "profile") {
+
+        showDashboardProfile(view);
+
+    }
+
+}
+
+
+// =========================================================
+// 15. DASHBOARD HOME
+// =========================================================
+
+function showDashboardHome(view) {
+
+    view.innerHTML = `
+
+        <div class="dashboard-grid">
+
+            <article class="dashboard-card dashboard-card-main">
+
+                <div class="dashboard-card-icon">
+                    ✦
+                </div>
+
+                <span class="dashboard-card-label">
+                    HORITZÓ D'APRENENTATGE
+                </span>
+
+                <h2>
+                    El teu aprenentatge,
+                    <span>al teu ritme.</span>
+                </h2>
+
+                <p>
+                    Horizon270.edu t'ajudarà a entendre
+                    què domines, què necessites reforçar
+                    i quin és el següent pas.
+                </p>
+
+                <button
+                    class="btn primary"
+                    onclick="dashboardSection('ai')"
+                >
+                    Obrir Horizon AI →
+                </button>
+
+            </article>
+
+
+            <article class="dashboard-card">
+
+                <span class="dashboard-card-label">
+                    PROGRÉS
+                </span>
+
+                <div class="dashboard-stat">
+                    —
+                </div>
+
+                <p>
+                    Encara no hi ha dades d'aprenentatge.
+                </p>
+
+            </article>
+
+
+            <article class="dashboard-card">
+
+                <span class="dashboard-card-label">
+                    TASQUES
+                </span>
+
+                <div class="dashboard-stat">
+                    0
+                </div>
+
+                <p>
+                    Tasques pendents
+                </p>
+
+            </article>
+
+
+            <article class="dashboard-card">
+
+                <span class="dashboard-card-label">
+                    CLASSES
+                </span>
+
+                <div class="dashboard-stat">
+                    0
+                </div>
+
+                <p>
+                    Classes connectades
+                </p>
+
+            </article>
+
+        </div>
+
+
+        <section class="dashboard-welcome">
+
+            <span class="eyebrow">
+                PRIMER PAS
+            </span>
+
+            <h2>
+                Configura el teu
+                <span>espai educatiu.</span>
+            </h2>
+
+            <p>
+                Quan el teu centre, professor o compte personal
+                estigui configurat, aquí apareixeran les teves
+                classes, activitats, calendari, tasques i progrés.
+            </p>
+
+        </section>
+
+    `;
+
+}
+
+
+// =========================================================
+// 16. DASHBOARD PLACEHOLDER
+// =========================================================
+
+function showDashboardPlaceholder(
+    view,
+    title,
+    description
+) {
+
+    view.innerHTML = `
+
+        <section class="dashboard-empty">
+
+            <div class="dashboard-empty-icon">
+                ✦
+            </div>
+
+            <span class="eyebrow">
+                HORIZON270.EDU
+            </span>
+
+            <h2>
+                ${escapeHTML(title)}
+            </h2>
+
+            <p>
+                ${escapeHTML(description)}
+            </p>
+
+            <span class="dashboard-coming">
+                Aquesta àrea està preparada per a la
+                següent fase de Horizon270.edu.
+            </span>
+
+        </section>
+
+    `;
+
+}
+
+
+// =========================================================
+// 17. HORIZON AI AREA
+// =========================================================
+
+function showDashboardAI(view) {
+
+    view.innerHTML = `
+
+        <section class="dashboard-ai">
+
+            <div class="dashboard-ai-header">
+
+                <span class="eyebrow">
+                    INTEL·LIGÈNCIA ARTIFICIAL
+                </span>
+
+                <h2>
+                    Horizon <span>AI</span>
+                </h2>
+
+                <p>
+                    Una IA educativa orientada a ajudar-te
+                    a comprendre, no simplement a donar-te
+                    una resposta.
+                </p>
+
+            </div>
+
+
+            <div class="dashboard-ai-panel">
+
+                <div class="dashboard-ai-top">
+
+                    <div class="dashboard-ai-brand">
+
+                        <div class="ai-avatar">
+                            ✦
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Horizon AI
+                            </strong>
+
+                            <small>
+                                Assistent d'aprenentatge
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <span class="ai-status">
+                        ● Preparada
+                    </span>
+
+                </div>
+
+
+                <div class="dashboard-ai-empty">
+
+                    <div>
+                        ✦
+                    </div>
+
+                    <h3>
+                        Comencem a aprendre.
+                    </h3>
+
+                    <p>
+                        Aquesta serà la interfície de la IA
+                        educativa de Horizon270.edu.
+                    </p>
+
+                </div>
+
+
+                <div class="dashboard-ai-input">
+
+                    <input
+                        type="text"
+                        placeholder="Escriu què vols entendre..."
+                        disabled
+                    >
+
+                    <button
+                        class="btn primary"
+                        disabled
+                    >
+                        Enviar
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    `;
+
+}
+
+
+// =========================================================
+// 18. PROFILE
+// =========================================================
+
+async function showDashboardProfile(view) {
+
+    const user =
+        await getCurrentUser();
+
+
+    if (!user) {
+
+        return;
+
+    }
+
+
+    const metadata =
+        user.user_metadata || {};
+
+
+    const displayName =
+        metadata.display_name ||
+        "Usuari";
+
+
+    view.innerHTML = `
+
+        <section class="dashboard-profile-page">
+
+            <span class="eyebrow">
+                EL MEU COMPTE
+            </span>
+
+            <h2>
+                El teu <span>perfil.</span>
+            </h2>
+
+            <div class="profile-card">
+
+                <div class="profile-avatar">
+                    ${escapeHTML(
+                        displayName
+                            .charAt(0)
+                            .toUpperCase()
+                    )}
+                </div>
+
+
+                <div class="profile-info">
+
+                    <span class="profile-label">
+                        NOM
+                    </span>
+
+                    <strong>
+                        ${escapeHTML(displayName)}
+                    </strong>
+
+
+                    <span class="profile-label">
+                        CORREU ELECTRÒNIC
+                    </span>
+
+                    <strong>
+                        ${escapeHTML(user.email || "")}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    `;
+
+}
+
+
+// =========================================================
+// 19. LOGOUT FROM UI
+// =========================================================
+
+async function handleLogout() {
+
+    const success =
+        await logoutUser();
+
+
+    if (!success) {
+
+        alert(
+            "No s'ha pogut tancar la sessió."
+        );
+
+        return;
+
+    }
+
+
+    removeDashboard();
+
+    showLanding();
+
+    updateNavigation();
+
+}
+
+
+// =========================================================
+// 20. UPDATE NAVIGATION
 // =========================================================
 
 async function updateNavigation() {
@@ -525,7 +1483,9 @@ async function updateNavigation() {
 
 
     const navActions =
-        document.querySelector(".nav-actions");
+        document.querySelector(
+            ".nav-actions"
+        );
 
 
     if (!navActions) {
@@ -544,6 +1504,7 @@ async function updateNavigation() {
                 Iniciar sessió
             </button>
 
+
             <button
                 class="btn primary"
                 onclick="showSignup()"
@@ -554,67 +1515,63 @@ async function updateNavigation() {
         `;
 
         return;
+
     }
+
+
+    const displayName =
+        user.user_metadata?.display_name ||
+        user.email?.split("@")[0] ||
+        "Compte";
 
 
     navActions.innerHTML = `
 
         <span class="user-email">
-            ${escapeHTML(user.email)}
+            ${escapeHTML(displayName)}
         </span>
 
+
         <button
-            class="btn secondary"
-            onclick="handleLogout()"
+            class="btn primary"
+            onclick="openDashboard()"
         >
-            Tancar sessió
+            Obrir Horizon →
         </button>
 
     `;
+
 }
 
 
 // =========================================================
-// 12. LOGOUT FROM UI
+// 21. OPEN DASHBOARD
 // =========================================================
 
-async function handleLogout() {
+async function openDashboard() {
 
-    const success =
-        await logoutUser();
+    const user =
+        await getCurrentUser();
 
 
-    if (!success) {
+    if (!user) {
 
-        alert(
-            "No s'ha pogut tancar la sessió."
-        );
+        showLogin();
 
         return;
+
     }
 
 
-    updateNavigation();
+    closeModal();
+
+    showDashboard(user);
+
 }
 
 
 // =========================================================
-// 13. ESCAPE HTML
-// =========================================================
-
-function escapeHTML(value) {
-
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-
-// =========================================================
-// 14. SUPABASE AUTH STATE
+// 22. AUTH STATE
 // =========================================================
 
 supabaseClient.auth.onAuthStateChange(
@@ -633,27 +1590,74 @@ supabaseClient.auth.onAuthStateChange(
                 session.user.email
             );
 
-        } else {
+            updateNavigation();
+
+        }
+
+        else {
 
             console.log(
                 "Cap usuari connectat."
             );
+
+            removeDashboard();
+
+            showLanding();
+
+            updateNavigation();
+
         }
 
-
-        updateNavigation();
     }
 );
 
 
 // =========================================================
-// 15. SCROLL
+// 23. ESCAPE HTML
+// =========================================================
+
+function escapeHTML(value) {
+
+    return String(value)
+
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+
+}
+
+
+// =========================================================
+// 24. SCROLL
 // =========================================================
 
 function scrollToSection(sectionId) {
 
     const section =
-        document.getElementById(sectionId);
+        document.getElementById(
+            sectionId
+        );
 
 
     if (!section) {
@@ -664,11 +1668,12 @@ function scrollToSection(sectionId) {
     section.scrollIntoView({
         behavior: "smooth"
     });
+
 }
 
 
 // =========================================================
-// 16. TEST SUPABASE
+// 25. TEST SUPABASE
 // =========================================================
 
 async function testSupabaseConnection() {
@@ -687,6 +1692,7 @@ async function testSupabaseConnection() {
         );
 
         return;
+
     }
 
 
@@ -698,17 +1704,21 @@ async function testSupabaseConnection() {
             user.email
         );
 
-    } else {
+    }
+
+    else {
 
         console.log(
             "Supabase connectat correctament."
         );
+
     }
+
 }
 
 
 // =========================================================
-// 17. START
+// 26. INITIALIZATION
 // =========================================================
 
 document.addEventListener(
@@ -721,6 +1731,21 @@ document.addEventListener(
 
 
         await testSupabaseConnection();
+
+
+        const {
+            data: { session }
+        } =
+            await supabaseClient.auth.getSession();
+
+
+        if (session) {
+
+            showDashboard(
+                session.user
+            );
+
+        }
 
 
         await updateNavigation();
