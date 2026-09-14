@@ -1,25 +1,17 @@
 // =========================================================
 // HORIZON270.EDU
 // Supabase + Authentication + Profiles + Dashboard
-// + Perfil editable
 // =========================================================
 
-
-// =========================================================
-// SUPABASE
-// =========================================================
-
-const SUPABASE_URL =
-    "https://cecouhunurwkncfcjjor.supabase.co";
+const SUPABASE_URL = "https://cecouhunurwkncfcjjor.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_mU_871SdiMJgSA1LHCLEAg_my7qG2oq";
 
-const supabaseClient =
-    window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
-    );
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+);
 
 
 // =========================================================
@@ -27,14 +19,12 @@ const supabaseClient =
 // =========================================================
 
 function escapeHTML(value) {
-
     return String(value ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
-
 }
 
 
@@ -48,9 +38,7 @@ function showMessage(message, type = "") {
     element.className =
         "auth-message " + type;
 
-    element.textContent =
-        message;
-
+    element.textContent = message;
 }
 
 
@@ -58,11 +46,7 @@ function showMessage(message, type = "") {
 // AUTH — REGISTRE
 // =========================================================
 
-async function registerUser(
-    email,
-    password,
-    displayName
-) {
+async function registerUser(email, password, displayName) {
 
     const { data, error } =
         await supabaseClient.auth.signUp({
@@ -71,11 +55,9 @@ async function registerUser(
             password,
 
             options: {
-
                 data: {
                     display_name: displayName
                 }
-
             }
 
         });
@@ -92,7 +74,6 @@ async function registerUser(
             success: false,
             error: error.message
         };
-
     }
 
 
@@ -100,7 +81,6 @@ async function registerUser(
         success: true,
         data
     };
-
 }
 
 
@@ -108,10 +88,7 @@ async function registerUser(
 // AUTH — LOGIN
 // =========================================================
 
-async function loginUser(
-    email,
-    password
-) {
+async function loginUser(email, password) {
 
     const { data, error } =
         await supabaseClient.auth.signInWithPassword({
@@ -133,7 +110,6 @@ async function loginUser(
             success: false,
             error: error.message
         };
-
     }
 
 
@@ -141,7 +117,6 @@ async function loginUser(
         success: true,
         data
     };
-
 }
 
 
@@ -163,12 +138,10 @@ async function logoutUser() {
         );
 
         return false;
-
     }
 
 
     return true;
-
 }
 
 
@@ -181,8 +154,7 @@ async function getCurrentUser() {
     const {
         data: { user },
         error
-    } =
-        await supabaseClient.auth.getUser();
+    } = await supabaseClient.auth.getUser();
 
 
     if (error) {
@@ -193,12 +165,10 @@ async function getCurrentUser() {
         );
 
         return null;
-
     }
 
 
     return user;
-
 }
 
 
@@ -241,7 +211,6 @@ async function createProfile(
             success: false,
             error: error.message
         };
-
     }
 
 
@@ -249,7 +218,6 @@ async function createProfile(
         success: true,
         data
     };
-
 }
 
 
@@ -275,12 +243,60 @@ async function getProfile(userId) {
         );
 
         return null;
-
     }
 
 
     return data;
+}
 
+
+// =========================================================
+// ACTUALITZAR PERFIL
+// =========================================================
+
+async function updateProfile(userId, displayName) {
+
+    const { data, error } =
+        await supabaseClient
+            .from("profiles")
+            .update({
+
+                display_name: displayName
+
+            })
+            .eq("id", userId)
+            .select()
+            .single();
+
+
+    if (error) {
+
+        console.error(
+            "Error actualitzant perfil:",
+            error.message
+        );
+
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+
+
+    // També actualitzem el metadata de Supabase Auth
+    await supabaseClient.auth.updateUser({
+
+        data: {
+            display_name: displayName
+        }
+
+    });
+
+
+    return {
+        success: true,
+        data
+    };
 }
 
 
@@ -317,7 +333,7 @@ function showLogin() {
 
                 <div class="auth-field">
 
-                    <label for="loginEmail">
+                    <label>
                         Correu electrònic
                     </label>
 
@@ -333,7 +349,7 @@ function showLogin() {
 
                 <div class="auth-field">
 
-                    <label for="loginPassword">
+                    <label>
                         Contrasenya
                     </label>
 
@@ -388,7 +404,6 @@ function showLogin() {
             "submit",
             handleLogin
         );
-
 }
 
 
@@ -428,10 +443,7 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('student')"
                 >
-
-                    <span class="account-type-icon">
-                        🎓
-                    </span>
+                    <span class="account-type-icon">🎓</span>
 
                     <strong>
                         Estudiant
@@ -441,7 +453,6 @@ function showSignup() {
                         Estudia amb Horizon AI encara que
                         el teu centre no utilitzi Horizon270.edu.
                     </small>
-
                 </button>
 
 
@@ -450,20 +461,15 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('teacher')"
                 >
-
-                    <span class="account-type-icon">
-                        👨‍🏫
-                    </span>
+                    <span class="account-type-icon">👨‍🏫</span>
 
                     <strong>
                         Professor
                     </strong>
 
                     <small>
-                        Gestiona el teu espai educatiu
-                        encara que el teu centre no hi participi.
+                        Gestiona el teu espai educatiu.
                     </small>
-
                 </button>
 
 
@@ -472,20 +478,15 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('center')"
                 >
-
-                    <span class="account-type-icon">
-                        🏫
-                    </span>
+                    <span class="account-type-icon">🏫</span>
 
                     <strong>
                         Centre educatiu
                     </strong>
 
                     <small>
-                        Escola, institut, acadèmia o
-                        centre educatiu independent.
+                        Escola, institut, acadèmia o centre educatiu.
                     </small>
-
                 </button>
 
 
@@ -494,20 +495,15 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('family')"
                 >
-
-                    <span class="account-type-icon">
-                        👨‍👩‍👧
-                    </span>
+                    <span class="account-type-icon">👨‍👩‍👧</span>
 
                     <strong>
                         Família
                     </strong>
 
                     <small>
-                        Connecta't amb l'espai educatiu
-                        del teu fill o filla.
+                        Connecta't amb l'espai educatiu familiar.
                     </small>
-
                 </button>
 
 
@@ -516,20 +512,15 @@ function showSignup() {
                     class="account-type"
                     onclick="selectAccountType('professional')"
                 >
-
-                    <span class="account-type-icon">
-                        🧑‍💼
-                    </span>
+                    <span class="account-type-icon">🧑‍💼</span>
 
                     <strong>
                         Professional educatiu
                     </strong>
 
                     <small>
-                        Orientació, suport i altres
-                        funcions educatives.
+                        Orientació, suport i altres funcions educatives.
                     </small>
-
                 </button>
 
             </div>
@@ -560,7 +551,6 @@ function showSignup() {
 
 
     modal.classList.remove("hidden");
-
 }
 
 
@@ -610,7 +600,7 @@ function selectAccountType(accountType) {
 
                 <div class="auth-field">
 
-                    <label for="signupName">
+                    <label>
                         Nom
                     </label>
 
@@ -628,7 +618,7 @@ function selectAccountType(accountType) {
 
                 <div class="auth-field">
 
-                    <label for="signupEmail">
+                    <label>
                         Correu electrònic
                     </label>
 
@@ -645,7 +635,7 @@ function selectAccountType(accountType) {
 
                 <div class="auth-field">
 
-                    <label for="signupPassword">
+                    <label>
                         Contrasenya
                     </label>
 
@@ -664,7 +654,7 @@ function selectAccountType(accountType) {
                 <input
                     type="hidden"
                     id="signupAccountType"
-                    value="${escapeHTML(accountType)}"
+                    value="${accountType}"
                 >
 
 
@@ -689,7 +679,7 @@ function selectAccountType(accountType) {
                 class="back-button"
                 onclick="showSignup()"
             >
-                ← Tornar a seleccionar tipus
+                ← Tornar
             </button>
 
         </div>
@@ -703,7 +693,6 @@ function selectAccountType(accountType) {
             "submit",
             handleSignup
         );
-
 }
 
 
@@ -742,33 +731,7 @@ async function handleSignup(event) {
             .value;
 
 
-    if (!name) {
-
-        showMessage(
-            "Escriu el teu nom.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    if (password.length < 6) {
-
-        showMessage(
-            "La contrasenya ha de tenir almenys 6 caràcters.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    showMessage(
-        "Creant el compte..."
-    );
+    showMessage("Creant el compte...");
 
 
     const result =
@@ -788,7 +751,6 @@ async function handleSignup(event) {
         );
 
         return;
-
     }
 
 
@@ -803,19 +765,17 @@ async function handleSignup(event) {
         );
 
         return;
-
     }
 
 
     if (!result.data.session) {
 
         showMessage(
-            "El compte s'ha creat, però encara no hi ha una sessió activa.",
+            "El compte s'ha creat però no hi ha sessió activa.",
             "error"
         );
 
         return;
-
     }
 
 
@@ -830,32 +790,25 @@ async function handleSignup(event) {
     if (!profileResult.success) {
 
         showMessage(
-            "El compte s'ha creat, però no s'ha pogut crear el perfil: " +
+            "Compte creat però error creant el perfil: " +
             profileResult.error,
             "error"
         );
 
         return;
-
     }
 
 
-    showMessage(
-        "Compte creat. Entrant..."
+    closeModal();
+
+
+    showDashboard(
+        result.data.user,
+        profileResult.data
     );
 
 
-    setTimeout(() => {
-
-        closeModal();
-
-        showDashboard(
-            result.data.user,
-            profileResult.data
-        );
-
-    }, 400);
-
+    updateNavigation();
 }
 
 
@@ -881,9 +834,7 @@ async function handleLogin(event) {
             .value;
 
 
-    showMessage(
-        "Iniciant sessió..."
-    );
+    showMessage("Iniciant sessió...");
 
 
     const result =
@@ -902,7 +853,6 @@ async function handleLogin(event) {
         );
 
         return;
-
     }
 
 
@@ -912,22 +862,16 @@ async function handleLogin(event) {
         );
 
 
-    showMessage(
-        "Sessió iniciada. Entrant..."
+    closeModal();
+
+
+    showDashboard(
+        result.data.user,
+        profile
     );
 
 
-    setTimeout(() => {
-
-        closeModal();
-
-        showDashboard(
-            result.data.user,
-            profile
-        );
-
-    }, 400);
-
+    updateNavigation();
 }
 
 
@@ -946,12 +890,11 @@ function closeModal() {
         modal.classList.add("hidden");
 
     }
-
 }
 
 
 // =========================================================
-// AMAGAR CAPÇALERA PÚBLICA
+// OCULTAR CAPÇALERA PÚBLICA
 // =========================================================
 
 function hidePublicHeader() {
@@ -962,14 +905,15 @@ function hidePublicHeader() {
 
     if (navbar) {
 
-        navbar.classList.add(
-            "dashboard-mode"
-        );
+        navbar.style.display = "none";
 
     }
-
 }
 
+
+// =========================================================
+// MOSTRAR CAPÇALERA PÚBLICA
+// =========================================================
 
 function showPublicHeader() {
 
@@ -979,12 +923,9 @@ function showPublicHeader() {
 
     if (navbar) {
 
-        navbar.classList.remove(
-            "dashboard-mode"
-        );
+        navbar.style.display = "";
 
     }
-
 }
 
 
@@ -992,10 +933,7 @@ function showPublicHeader() {
 // DASHBOARD
 // =========================================================
 
-function showDashboard(
-    user,
-    profile = null
-) {
+function showDashboard(user, profile = null) {
 
     const main =
         document.querySelector("main");
@@ -1007,6 +945,11 @@ function showDashboard(
     if (!main) return;
 
 
+    // IMPORTANT:
+    // Amaguem completament la web pública.
+    hidePublicHeader();
+
+
     main.style.display = "none";
 
 
@@ -1015,9 +958,6 @@ function showDashboard(
         footer.style.display = "none";
 
     }
-
-
-    hidePublicHeader();
 
 
     removeDashboard();
@@ -1069,7 +1009,6 @@ function showDashboard(
     dashboard.innerHTML = `
 
         <div class="dashboard-shell">
-
 
             <aside class="dashboard-sidebar">
 
@@ -1227,7 +1166,6 @@ function showDashboard(
             "dashboard-view"
         )
     );
-
 }
 
 
@@ -1240,7 +1178,6 @@ function showDashboardHome(view) {
     view.innerHTML = `
 
         <div class="dashboard-grid">
-
 
             <article class="dashboard-card dashboard-card-main">
 
@@ -1345,7 +1282,6 @@ function showDashboardHome(view) {
         </section>
 
     `;
-
 }
 
 
@@ -1455,7 +1391,6 @@ function dashboardSection(section) {
         showDashboardProfile(view);
 
     }
-
 }
 
 
@@ -1492,7 +1427,6 @@ function showDashboardPlaceholder(
         </section>
 
     `;
-
 }
 
 
@@ -1596,12 +1530,11 @@ function showDashboardAI(view) {
         </section>
 
     `;
-
 }
 
 
 // =========================================================
-// PERFIL
+// PROFILE
 // =========================================================
 
 async function showDashboardProfile(view) {
@@ -1626,6 +1559,7 @@ async function showDashboardProfile(view) {
     const displayName =
         profile?.display_name ||
         metadata.display_name ||
+        user.email?.split("@")[0] ||
         "Usuari";
 
 
@@ -1663,7 +1597,6 @@ async function showDashboardProfile(view) {
 
 
             <div class="profile-card">
-
 
                 <div class="profile-avatar">
 
@@ -1712,19 +1645,22 @@ async function showDashboardProfile(view) {
                 </div>
 
 
-                <button
-                    class="btn primary profile-edit-button"
-                    onclick="showEditProfile()"
-                >
-                    Editar perfil
-                </button>
+                <div class="profile-edit">
+
+                    <button
+                        class="btn primary"
+                        onclick="enableProfileEdit()"
+                    >
+                        Editar perfil
+                    </button>
+
+                </div>
 
             </div>
 
         </section>
 
     `;
-
 }
 
 
@@ -1732,189 +1668,67 @@ async function showDashboardProfile(view) {
 // EDITAR PERFIL
 // =========================================================
 
-async function showEditProfile() {
+function enableProfileEdit() {
 
-    const view =
-        document.getElementById(
-            "dashboard-view"
+    const info =
+        document.querySelector(
+            ".profile-info"
         );
 
 
-    if (!view) return;
+    if (!info) return;
 
 
-    const user =
-        await getCurrentUser();
-
-
-    if (!user) return;
-
-
-    const profile =
-        await getProfile(
-            user.id
+    const nameElement =
+        info.querySelector(
+            "strong"
         );
 
 
-    const displayName =
-        profile?.display_name ||
-        user.user_metadata?.display_name ||
+    const currentName =
+        nameElement?.textContent?.trim() ||
         "";
 
 
-    view.innerHTML = `
+    info.innerHTML = `
 
-        <section class="dashboard-profile-page">
+        <div class="auth-field">
 
-            <span class="eyebrow">
-                CONFIGURACIÓ
-            </span>
+            <label>
+                Nom
+            </label>
 
-            <h2>
-                Edita el teu <span>perfil.</span>
-            </h2>
+            <input
+                id="editProfileName"
+                type="text"
+                maxlength="80"
+                value="${escapeHTML(currentName)}"
+                autocomplete="name"
+            >
 
-
-            <div class="profile-edit-card">
-
-
-                <form
-                    id="profileEditForm"
-                    class="profile-edit-form"
-                >
+        </div>
 
 
-                    <div class="auth-field">
+        <div class="profile-edit-actions">
 
-                        <label for="editName">
-                            Nom
-                        </label>
-
-                        <input
-                            id="editName"
-                            type="text"
-                            maxlength="80"
-                            value="${escapeHTML(displayName)}"
-                            required
-                        >
-
-                    </div>
+            <button
+                class="btn primary"
+                onclick="saveProfileChanges()"
+            >
+                Guardar canvis
+            </button>
 
 
-                    <div class="auth-field">
+            <button
+                class="btn secondary"
+                onclick="dashboardSection('profile')"
+            >
+                Cancel·lar
+            </button>
 
-                        <label for="editEmail">
-                            Correu electrònic
-                        </label>
-
-                        <input
-                            id="editEmail"
-                            type="email"
-                            value="${escapeHTML(user.email || "")}"
-                            required
-                        >
-
-                        <small class="profile-help">
-                            Si canvies el correu, Supabase pot
-                            demanar una nova confirmació.
-                        </small>
-
-                    </div>
-
-
-                    <div class="auth-field">
-
-                        <label>
-                            Tipus de compte
-                        </label>
-
-                        <input
-                            type="text"
-                            value="${escapeHTML(
-                                getAccountTypeLabel(
-                                    profile?.account_type
-                                )
-                            )}"
-                            disabled
-                        >
-
-                        <small class="profile-help">
-                            El tipus de compte no es pot canviar
-                            des d'aquí.
-                        </small>
-
-                    </div>
-
-
-                    <div
-                        id="profileMessage"
-                        class="auth-message"
-                    ></div>
-
-
-                    <div class="profile-edit-actions">
-
-                        <button
-                            type="submit"
-                            class="btn primary"
-                        >
-                            Guardar canvis
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="btn secondary"
-                            onclick="dashboardSection('profile')"
-                        >
-                            Cancel·lar
-                        </button>
-
-                    </div>
-
-
-                </form>
-
-            </div>
-
-        </section>
+        </div>
 
     `;
-
-
-    document
-        .getElementById("profileEditForm")
-        .addEventListener(
-            "submit",
-            handleProfileUpdate
-        );
-
-}
-
-
-// =========================================================
-// ETIQUETA TIPUS DE COMPTE
-// =========================================================
-
-function getAccountTypeLabel(type) {
-
-    const labels = {
-
-        student: "Estudiant",
-
-        teacher: "Professor",
-
-        center: "Centre educatiu",
-
-        family: "Família",
-
-        professional: "Professional educatiu"
-
-    };
-
-
-    return labels[type] || "Usuari";
-
 }
 
 
@@ -1922,15 +1736,29 @@ function getAccountTypeLabel(type) {
 // GUARDAR PERFIL
 // =========================================================
 
-async function handleProfileUpdate(event) {
+async function saveProfileChanges() {
 
-    event.preventDefault();
-
-
-    const message =
+    const input =
         document.getElementById(
-            "profileMessage"
+            "editProfileName"
         );
+
+
+    if (!input) return;
+
+
+    const newName =
+        input.value.trim();
+
+
+    if (!newName) {
+
+        alert(
+            "El nom no pot estar buit."
+        );
+
+        return;
+    }
 
 
     const user =
@@ -1939,238 +1767,121 @@ async function handleProfileUpdate(event) {
 
     if (!user) {
 
-        if (message) {
-
-            message.className =
-                "auth-message error";
-
-            message.textContent =
-                "No hi ha cap sessió activa.";
-
-        }
+        alert(
+            "La sessió ha caducat."
+        );
 
         return;
-
     }
 
 
-    const name =
-        document
-            .getElementById("editName")
-            .value
-            .trim();
-
-
-    const email =
-        document
-            .getElementById("editEmail")
-            .value
-            .trim();
-
-
-    if (!name) {
-
-        if (message) {
-
-            message.className =
-                "auth-message error";
-
-            message.textContent =
-                "El nom no pot estar buit.";
-
-        }
-
-        return;
-
-    }
-
-
-    if (!email) {
-
-        if (message) {
-
-            message.className =
-                "auth-message error";
-
-            message.textContent =
-                "El correu no pot estar buit.";
-
-        }
-
-        return;
-
-    }
-
-
-    if (message) {
-
-        message.className =
-            "auth-message";
-
-        message.textContent =
-            "Guardant canvis...";
-
-    }
-
-
-    // -----------------------------------------------------
-    // ACTUALITZAR PERFIL
-    // -----------------------------------------------------
-
-    const { error: profileError } =
-        await supabaseClient
-            .from("profiles")
-            .update({
-
-                display_name: name
-
-            })
-            .eq("id", user.id);
-
-
-    if (profileError) {
-
-        console.error(
-            "Error actualitzant perfil:",
-            profileError.message
+    const button =
+        document.querySelector(
+            ".profile-edit-actions .primary"
         );
 
 
-        if (message) {
+    if (button) {
 
-            message.className =
-                "auth-message error";
+        button.disabled = true;
 
-            message.textContent =
-                "No s'ha pogut actualitzar el perfil: " +
-                profileError.message;
+        button.textContent =
+            "Guardant...";
+
+    }
+
+
+    const result =
+        await updateProfile(
+            user.id,
+            newName
+        );
+
+
+    if (!result.success) {
+
+        alert(
+            "No s'han pogut guardar els canvis: " +
+            result.error
+        );
+
+        if (button) {
+
+            button.disabled = false;
+
+            button.textContent =
+                "Guardar canvis";
 
         }
 
         return;
-
     }
 
 
-    // -----------------------------------------------------
-    // ACTUALITZAR METADATA DE SUPABASE
-    // -----------------------------------------------------
-
-    const { error: metadataError } =
-        await supabaseClient.auth.updateUser({
-
-            data: {
-                display_name: name
-            }
-
-        });
+    // Tornem a carregar el perfil des de Supabase.
+    dashboardSection("profile");
 
 
-    if (metadataError) {
+    // Actualitzem també el nom de la capçalera del dashboard.
+    setTimeout(() => {
 
-        console.error(
-            "Error actualitzant metadata:",
-            metadataError.message
+        refreshDashboardHeader(
+            newName
         );
 
-    }
+    }, 100);
+
+}
 
 
-    // -----------------------------------------------------
-    // ACTUALITZAR EMAIL SI HA CANVIAT
-    // -----------------------------------------------------
+// =========================================================
+// ACTUALITZAR NOM DE LA CAPÇALERA DEL DASHBOARD
+// =========================================================
 
-    if (
-        email.toLowerCase() !==
-        String(user.email || "").toLowerCase()
-    ) {
+function refreshDashboardHeader(name) {
 
-        const { error: emailError } =
-            await supabaseClient.auth.updateUser({
-
-                email: email
-
-            });
+    const header =
+        document.querySelector(
+            ".dashboard-header h1"
+        );
 
 
-        if (emailError) {
+    if (header) {
 
-            console.error(
-                "Error actualitzant correu:",
-                emailError.message
-            );
-
-
-            if (message) {
-
-                message.className =
-                    "auth-message error";
-
-                message.textContent =
-                    "El nom s'ha actualitzat, però no s'ha pogut canviar el correu: " +
-                    emailError.message;
-
-            }
-
-            return;
-
-        }
-
-
-        if (message) {
-
-            message.className =
-                "auth-message success";
-
-            message.textContent =
-                "Perfil actualitzat. Revisa el correu si Supabase et demana confirmar el nou correu.";
-
-        }
-
-    }
-
-    else {
-
-        if (message) {
-
-            message.className =
-                "auth-message success";
-
-            message.textContent =
-                "Perfil actualitzat correctament.";
-
-        }
+        header.textContent =
+            `Hola, ${name}.`;
 
     }
 
 
-    // -----------------------------------------------------
-    // REFRESCAR DASHBOARD
-    // -----------------------------------------------------
-
-    setTimeout(async () => {
-
-        const updatedUser =
-            await getCurrentUser();
+    const avatar =
+        document.querySelector(
+            ".dashboard-header .avatar"
+        );
 
 
-        const updatedProfile =
-            await getProfile(
-                user.id
-            );
+    if (avatar) {
+
+        avatar.textContent =
+            name
+                .charAt(0)
+                .toUpperCase();
+
+    }
 
 
-        if (updatedUser) {
+    const publicName =
+        document.querySelector(
+            ".user-email"
+        );
 
-            showDashboard(
-                updatedUser,
-                updatedProfile
-            );
 
-        }
+    if (publicName) {
 
-    }, 900);
+        publicName.textContent =
+            name;
 
+    }
 }
 
 
@@ -2191,7 +1902,6 @@ async function handleLogout() {
         );
 
         return;
-
     }
 
 
@@ -2199,10 +1909,7 @@ async function handleLogout() {
 
     showLanding();
 
-    showPublicHeader();
-
     updateNavigation();
-
 }
 
 
@@ -2223,7 +1930,6 @@ function removeDashboard() {
         dashboard.remove();
 
     }
-
 }
 
 
@@ -2240,6 +1946,10 @@ function showLanding() {
         document.querySelector("footer");
 
 
+    // Tornem a mostrar la web pública.
+    showPublicHeader();
+
+
     if (main) {
 
         main.style.display = "";
@@ -2254,10 +1964,7 @@ function showLanding() {
     }
 
 
-    showPublicHeader();
-
     removeDashboard();
-
 }
 
 
@@ -2302,7 +2009,6 @@ async function updateNavigation() {
         `;
 
         return;
-
     }
 
 
@@ -2327,7 +2033,6 @@ async function updateNavigation() {
         </button>
 
     `;
-
 }
 
 
@@ -2346,7 +2051,6 @@ async function openDashboard() {
         showLogin();
 
         return;
-
     }
 
 
@@ -2363,7 +2067,6 @@ async function openDashboard() {
         user,
         profile
     );
-
 }
 
 
@@ -2416,11 +2119,8 @@ function scrollToSection(sectionId) {
 
 
     section.scrollIntoView({
-
         behavior: "smooth"
-
     });
-
 }
 
 
